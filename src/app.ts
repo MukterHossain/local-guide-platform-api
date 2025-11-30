@@ -24,7 +24,7 @@ app.use(cookieParser())
 
 
 
-app.use("/api/v1", router)
+app.use("/api", router)
 
 app.get('/', (req: Request, res: Response) => {
     res.send({
