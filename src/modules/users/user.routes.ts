@@ -5,8 +5,9 @@ const router = express.Router();
 
 
 
-
+router.get("/me", UserController.getMyProfile)
 router.post("/", UserController.createUser)
+
 
 
 
