@@ -1,13 +1,46 @@
 model User {
-    id                 String     @id @default(uuid())
+    id                 String     @id @default(cuid())
+    name               String
     email              String     @unique
     password           String
-    role               String
+    phone              String?
     needPasswordChange Boolean    @default(true)
-    status             String
+    role               UserRole   @default(USER)
+    ratingAvg          Float?     @default(0)
+    status             UserStatus @default(ACTIVE)
     createdAt          DateTime   @default(now())
     updatedAt          DateTime   @updatedAt
+
+    profile        Profile?
+    tours          Tour[]          @relation("GuideTours")
+    bookings       Booking[]       @relation("UserBookings")
+    reviews        Review[]        @relation("UserReviews")
+    guideReviews   Review[]        @relation("GuideReviews")
+    guideLocations GuideLocation[] @relation("GuideLocations")
+    notifications  Notification[]
+    wishlist       Wishlist[]
+    reportsFiled   Report[]        @relation("ReportReporter")
+    reportsAgainst Report[]        @relation("ReportGuide")
+    availabilities Availability[]
 
     @@map("users")
 }
 
+model Profile {
+    id                 String                  @id @default(cuid())
+    userId             String                  @unique
+    bio                String?
+    languages          String[] // ["English","Bangla"]
+    experienceYears    Int?
+    locationId String?
+    location   Location? @relation(fields: [locationId], references: [id])
+    pricePerHour       Float?
+    availableStatus    Boolean                 @default(true)
+    verificationStatus GuideVerificationStatus @default(PENDING)
+    nidOrPassportUrl   String? // url to uploaded document
+    adminNote          String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("profiles")
+}

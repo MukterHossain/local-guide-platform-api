@@ -1,0 +1,36 @@
+enum UserRole {
+    USER 
+    GUIDE
+    ADMIN
+}
+
+enum UserStatus {
+    ACTIVE
+    PENDING
+    BLOCKED
+    DELETED
+}
+
+enum Gender {
+    MALE
+    FEMALE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum GuideVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}

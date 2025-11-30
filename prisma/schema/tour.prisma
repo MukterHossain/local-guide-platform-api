@@ -1,0 +1,84 @@
+model Tour {
+    id            String   @id @default(cuid())
+    guideId       String
+    title         String
+    description   String
+    city          String
+    durationHours Int
+    price         Float
+    maxPeople     Int
+    meetingPoint  String?
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    guide      User           @relation("GuideTours", fields: [guideId], references: [id], onDelete: Cascade)
+    bookings   Booking[]      @relation("TourBookings")
+    reviews    Review[]
+    images     TourImage[]   @relation("TourImages") 
+    categories TourCategory[]
+
+    @@map("tours")
+}
+
+model Booking {
+    id            String        @id @default(cuid())
+    tourId        String
+    userId        String
+    bookingDate   DateTime
+    status        BookingStatus @default(PENDING)
+    totalPrice    Float
+    paymentStatus PaymentStatus @default(UNPAID)
+    createdAt     DateTime      @default(now())
+    updatedAt     DateTime      @updatedAt
+
+    tour Tour @relation("TourBookings", fields: [tourId], references: [id], onDelete: Cascade)
+    user    User     @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
+    payment Payment? @relation("BookingPayment")
+
+    @@map("bookings")
+}
+
+model Review {
+    id        String   @id @default(cuid())
+    userId    String
+    guideId   String
+    tourId    String
+    rating    Int
+    comment   String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    user  User @relation("UserReviews", fields: [userId], references: [id], onDelete: Cascade)
+    guide User @relation("GuideReviews", fields: [guideId], references: [id], onDelete: Cascade)
+    tour  Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+    @@map("reviews")
+}
+
+model Payment {
+    id                 String        @id @default(cuid())
+    bookingId          String        @unique
+    amount             Float
+    transactionId      String        @unique
+    status             PaymentStatus @default(UNPAID)
+    paymentGatewayData Json?
+    createdAt          DateTime      @default(now())
+    updatedAt          DateTime      @updatedAt
+
+    booking Booking @relation("BookingPayment", fields: [bookingId], references: [id], onDelete: Cascade)
+
+    @@map("payments")
+}
+
+model TourImage {
+    id        String   @id @default(cuid())
+    tourId    String
+    url       String
+    alt       String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    tour Tour @relation("TourImages", fields: [tourId], references: [id], onDelete: Cascade)
+
+    @@map("tourImages")
+}
