@@ -5,6 +5,7 @@ import { Secret } from "jsonwebtoken"
 import ApiError from "../../error/ApiError";
 import httpStatus from "http-status";
 import { jwtHelper } from "../../helper/jwtHelper";
+import config from "../../config";
 
 
 const login = async (payload: {email:string, password:string}) =>{
@@ -19,8 +20,17 @@ const login = async (payload: {email:string, password:string}) =>{
             throw new ApiError(httpStatus.BAD_REQUEST,"Password is incorrect")
         }
 
+
+         const accessToken = jwtHelper.generateToken({email:user.email, role:user.role}, config.jwt.jwt_secret as Secret, config.jwt.expires_in as string)
+
+       
+        const refreshToken =jwtHelper.generateToken({email:user.email, role:user.role}, config.jwt.refresh_token_secret as Secret, config.jwt.refresh_token_expires_in as string)
+
+
         
         return {
+            accessToken,
+            refreshToken,
             needPasswordChange:user.needPasswordChange,
             user
         }

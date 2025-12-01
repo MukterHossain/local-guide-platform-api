@@ -4,6 +4,8 @@ import catchAsync from "../../shared/catchAsync";
 import sendResponse from "../../shared/sendResponse";
 import { IJWTPayload } from "../../types/common";
 import httpStatus from 'http-status'
+import { userFilterableFields } from "./user.constant";
+import pick from "../../helper/pick";
 
 const createUser = catchAsync (async (req:Request, res:Response) =>{
     const result = await UserService.createUser(req)
@@ -14,6 +16,22 @@ const createUser = catchAsync (async (req:Request, res:Response) =>{
         success: true,
         message: "User created successfully",
         data: result
+    })
+})
+
+const getAllFromDB = catchAsync (async (req:Request , res:Response) =>{
+     const filters = pick(req.query, userFilterableFields) // searching , filtering
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
+
+    const result = await UserService.getAllFromDB(filters, options)
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User retrieved successfully",
+        data: result.data,
+        meta: result.meta
     })
 })
 const getMyProfile = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
@@ -32,5 +50,6 @@ const getMyProfile = catchAsync (async (req:Request & { user?: IJWTPayload }, re
 
 export const UserController = {
     createUser,
+    getAllFromDB,
     getMyProfile
 }
