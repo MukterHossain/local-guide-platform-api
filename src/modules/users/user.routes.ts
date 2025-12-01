@@ -2,13 +2,17 @@ import express, { NextFunction, Request, Response } from 'express'
 import { UserController } from './user.controller';
 import { fileUploader } from '../../helper/fileUploader';
 import { userValidation } from './user.validation';
+import auth from '../../middlewares/auth';
+import { UserRole } from '@prisma/client';
 
 const router = express.Router();
 
 
 
-router.get("/me", UserController.getMyProfile)
-router.get("/", UserController.getAllFromDB)
+router.get("/me",
+    auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.USER),
+    UserController.getMyProfile)
+router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.USER), UserController.getAllFromDB)
 
 router.post("/",
      fileUploader.upload.single('file'),
@@ -16,7 +20,6 @@ router.post("/",
         req.body = userValidation.createUserValidation.parse(JSON.parse(req.body.data))
     return UserController.createUser(req, res, next)
     }
-    //  UserController.createUser
     )
 
 

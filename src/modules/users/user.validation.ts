@@ -1,6 +1,15 @@
 import { UserStatus } from "@prisma/client";
 import { z } from "zod";
 
+const profileValidation = z.object({
+  bio: z.string().optional(),
+  languages: z.array(z.string()).optional(),
+  experienceYears: z.number().optional(),
+  pricePerHour: z.number().optional(),
+  locationId: z.string().optional(),
+  nidOrPassportUrl: z.string().optional(),
+}).optional();
+
 const createUserValidation = z.object({
     password: z.string({
         error: "Password is required",
@@ -16,6 +25,8 @@ const createUserValidation = z.object({
     }),
     image: z.string().optional(),
     address: z.string().optional(),
+     role: z.enum(["USER", "GUIDE"]).default("USER"),
+     profile: profileValidation
    
 });
 
@@ -29,6 +40,7 @@ const updateStatus = z.object({
 });
 
 export const userValidation = {
+    profileValidation,
     createUserValidation,
     updateStatus
 };

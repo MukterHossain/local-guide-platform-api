@@ -2,23 +2,42 @@ import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
 import { Request } from "express";
 import { prisma } from "../../shared/prisma";
 import bcrypt from "bcryptjs";
-import { IJWTPayload } from "../../types/common";
+import { IJWTPayload, UserWithProfile } from "../../types/common";
 import { fileUploader } from "../../helper/fileUploader";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { userSearchableFields } from "./user.constant";
 
-const createUser = async (req:Request): Promise<User> =>{
-    
-     if (req.file) {
-        const uploadResult = await fileUploader.uploadToCloudinary(req.file)
-        console.log("uploadResult", uploadResult);
-        req.body.image = uploadResult?.secure_url
+const createUser = async (req: Request): Promise<UserWithProfile> => {
+    const { role, profile, email, password } = req.body;
+    const exists = await prisma.user.findUnique({ where: { email } })
+    if (exists) {
+        throw new Error("User already exists")
     }
- const hasshedPassword = await bcrypt.hash(req.body.password, 10);
-    if(req.body.role === UserRole.ADMIN){
-        throw new Error("Admin already exist")
-     }
-    const result = await prisma.user.create({
+
+    // if (req.file) {
+    //     const uploadResult = await fileUploader.uploadToCloudinary(req.file)
+    //     console.log("uploadResult", uploadResult);
+    //     req.body.image = uploadResult?.secure_url
+    // }
+
+    if (role === UserRole.ADMIN) {
+        throw new Error("Admin cannot be created from this route.")
+    }
+
+    if (role === UserRole.GUIDE && !profile) {
+        throw new Error("Guide profile data is required")
+    }
+
+    if (role === UserRole.GUIDE) {
+        if (!profile.languages || !profile.experienceYears || !profile.pricePerHour) {
+            throw new Error("Missing guide profile fields.")
+        }
+    }
+
+    const hasshedPassword = await bcrypt.hash(req.body.password, 10);
+
+
+    let user = await prisma.user.create({
         data: {
             email: req.body.email,
             password: hasshedPassword,
@@ -26,20 +45,72 @@ const createUser = async (req:Request): Promise<User> =>{
             phone: req.body.phone,
             role: req.body.role as UserRole || UserRole.USER,
             address: req.body.address,
-            image: req.body.image
+            image: null
         }
     })
-    console.log("user", result)
-    return result
+
+    // upload image
+    //  if (req.file) {
+    //     const uploadResult = await fileUploader.uploadToCloudinary(req.file)
+    //     console.log("uploadResult", uploadResult);
+    //     // req.body.image = uploadResult?.secure_url
+    //     await prisma.user.update({
+    //         where: {
+    //             id: user.id
+    //         },
+    //         data: {
+    //             image: uploadResult?.secure_url
+    //         }
+    //     })
+    //     user.image = uploadResult?.secure_url 
+    // }
+    if (req.file) {
+        const uploadResult = await fileUploader.uploadToCloudinary(req.file)
+        console.log("uploadResult", uploadResult);
+        // req.body.image = uploadResult?.secure_url
+        user = await prisma.user.update({
+            where: { id: user.id },
+            data: { image: uploadResult?.secure_url }
+        })
+    }
+
+    // guide profile
+    if (role === UserRole.GUIDE) {
+        if (!profile) {
+            throw new Error("Guide profile data is required")
+        }
+        await prisma.profile.create({
+            data: {
+                userId: user.id,
+                bio: profile.bio,
+                languages: profile.languages || [],
+                experienceYears: profile.experienceYears,
+                pricePerHour: profile.pricePerHour,
+                locationId: profile.locationId,
+            }
+        })
+    }
+
+    if (role === UserRole.GUIDE) {
+        const guideProfile = await prisma.profile.findUnique({
+            where: {
+                userId: user.id
+            }
+        })
+        console.log("user", user)
+        return { ...user, profile: guideProfile }
+    }
+
+    return user
 }
 
 
-const getAllFromDB =async(params:any, options: IOptions)=>{
- 
+const getAllFromDB = async (params: any, options: IOptions) => {
+
     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
     const { searchTerm, ...filterData } = params;
 
-     const andConditions: Prisma.UserWhereInput[] = [];
+    const andConditions: Prisma.UserWhereInput[] = [];
 
     if (searchTerm) {
         andConditions.push({
@@ -75,9 +146,12 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
             [sortBy]: sortOrder
         },
         where: {
-            AND: andConditions
+            AND: andConditions,
+
         },
-        
+        include: {
+            profile: true
+        }
     })
 
     return {
@@ -90,7 +164,7 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
     }
 }
 
-const getMyProfile = async (user: IJWTPayload) =>{
+const getMyProfile = async (user: IJWTPayload) => {
     const userInfo = await prisma.user.findUniqueOrThrow({
         where: {
             email: user.email,
@@ -105,24 +179,27 @@ const getMyProfile = async (user: IJWTPayload) =>{
         }
     })
     let profileData;
-    if(userInfo.role === UserRole.USER){
+    if (userInfo.role === UserRole.USER) {
         profileData = await prisma.user.findUniqueOrThrow({
-            where:{
+            where: {
                 email: user.email,
                 status: UserStatus.ACTIVE
             }
         })
     }
-    if(userInfo.role === UserRole.GUIDE){
-        profileData = await prisma.profile.findUniqueOrThrow({
-            where:{
-                userId: userInfo.id
+    if (userInfo.role === UserRole.GUIDE) {
+        profileData = await prisma.user.findUniqueOrThrow({
+            where: {
+                email: user.email
+            },
+            include: {
+                profile: true
             }
         })
     }
-    if(userInfo.role === UserRole.ADMIN){
+    if (userInfo.role === UserRole.ADMIN) {
         profileData = await prisma.user.findUniqueOrThrow({
-            where:{
+            where: {
                 email: user.email
             }
         })
