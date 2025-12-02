@@ -3,16 +3,59 @@ import catchAsync from "../../shared/catchAsync";
 import { BookingService } from "./booking.service";
 import httpStatus from 'http-status'
 import sendResponse from "../../shared/sendResponse";
+import { IJWTPayload } from "../../types/common";
+import { userFilterableFields } from "../users/user.constant";
+import pick from "../../helper/pick";
 
-const createBooking = catchAsync (async (req:Request , res:Response) =>{
-    
-    const result = await BookingService.createBooking(req)
+const createBooking = catchAsync (async (req:Request & { user?: IJWTPayload } , res:Response) =>{
+    const { tourId, bookingDate } = req.body;
+    const result = await BookingService.createBooking(req.user!, tourId, new Date(bookingDate));
     console.log("result", result);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "User retrieved successfully",
+        message: "Booking created successfully",
+        data: result
+    })
+})
+const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
+    const filters = pick(req.query, userFilterableFields)
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
+
+    const result = await BookingService.getAllFromDB(filters, options);
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Booking created successfully",
+        meta: result.meta,
+        data: result.data
+    })
+})
+const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
+   const {bookingId} = req.params; 
+  
+    const result = await BookingService.getSingleByIdFromDB(req.user as IJWTPayload, bookingId);
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Booking fetched successfully",
+        data: result
+    })
+})
+const getMyBooking = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
+  const user = req.user 
+    const result = await BookingService.getMyBooking(user as IJWTPayload);
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "My bookings retrieved successfully",
         data: result
     })
 })
@@ -26,5 +69,8 @@ const createBooking = catchAsync (async (req:Request , res:Response) =>{
 
 
 export const BookingController = {
-    createBooking
+    createBooking,
+    getAllFromDB,
+    getSingleByIdFromDB,
+    getMyBooking
 }

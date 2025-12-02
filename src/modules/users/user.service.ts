@@ -14,12 +14,6 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
         throw new Error("User already exists")
     }
 
-    // if (req.file) {
-    //     const uploadResult = await fileUploader.uploadToCloudinary(req.file)
-    //     console.log("uploadResult", uploadResult);
-    //     req.body.image = uploadResult?.secure_url
-    // }
-
     if (role === UserRole.ADMIN) {
         throw new Error("Admin cannot be created from this route.")
     }
@@ -46,31 +40,45 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
             role: req.body.role as UserRole || UserRole.USER,
             address: req.body.address,
             image: null
+        },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true,
+            role: true,
+            address: true,
+            image: true,
+            needPasswordChange: true,
+            status: true,
+            isDeleted: true,
+            ratingAvg: true,
+            createdAt: true,
+            updatedAt: true
         }
     })
-
-    // upload image
-    //  if (req.file) {
-    //     const uploadResult = await fileUploader.uploadToCloudinary(req.file)
-    //     console.log("uploadResult", uploadResult);
-    //     // req.body.image = uploadResult?.secure_url
-    //     await prisma.user.update({
-    //         where: {
-    //             id: user.id
-    //         },
-    //         data: {
-    //             image: uploadResult?.secure_url
-    //         }
-    //     })
-    //     user.image = uploadResult?.secure_url 
-    // }
     if (req.file) {
         const uploadResult = await fileUploader.uploadToCloudinary(req.file)
         console.log("uploadResult", uploadResult);
         // req.body.image = uploadResult?.secure_url
         user = await prisma.user.update({
             where: { id: user.id },
-            data: { image: uploadResult?.secure_url }
+            data: { image: uploadResult?.secure_url },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,
+                role: true,
+                address: true,
+                image: true,
+                needPasswordChange: true,
+                status: true,
+                isDeleted: true,
+                ratingAvg: true,
+                createdAt: true,
+                updatedAt: true
+            }
         })
     }
 
@@ -98,10 +106,10 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
             }
         })
         console.log("user", user)
-        return { ...user, profile: guideProfile }
+        return { ...user, profile: guideProfile } as UserWithProfile
     }
 
-    return user
+    return user as UserWithProfile
 }
 
 
@@ -149,9 +157,25 @@ const getAllFromDB = async (params: any, options: IOptions) => {
             AND: andConditions,
 
         },
-        include: {
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true,
+            role: true,
+            address: true,
+            image: true,
+            needPasswordChange: true,
+            status: true,
+            isDeleted: true,
+            ratingAvg: true,
+            createdAt: true,
+            updatedAt: true,
             profile: true
         }
+        // include: {
+        //     profile: true
+        // }
     })
 
     return {
@@ -184,6 +208,22 @@ const getMyProfile = async (user: IJWTPayload) => {
             where: {
                 email: user.email,
                 status: UserStatus.ACTIVE
+            },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,                
+                role: true,
+                address: true,                
+                image: true,
+                needPasswordChange: true,
+                status: true,
+                isDeleted: true,                
+                ratingAvg: true,
+                createdAt: true,
+                updatedAt: true,
+                profile: true
             }
         })
     }
@@ -192,15 +232,46 @@ const getMyProfile = async (user: IJWTPayload) => {
             where: {
                 email: user.email
             },
-            include: {
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,
+                role: true,
+                address: true,
+                image: true,
+                needPasswordChange: true,
+                status: true,
+                isDeleted: true,
+                ratingAvg: true,
+                createdAt: true,
+                updatedAt: true,
                 profile: true
             }
+            // include: {
+            //     profile: true
+            // }
         })
     }
     if (userInfo.role === UserRole.ADMIN) {
         profileData = await prisma.user.findUniqueOrThrow({
             where: {
                 email: user.email
+            },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,                
+                role: true,
+                address: true,                
+                image: true,
+                needPasswordChange: true,
+                status: true,
+                isDeleted: true,                
+                ratingAvg: true,
+                createdAt: true,
+                updatedAt: true
             }
         })
     }
