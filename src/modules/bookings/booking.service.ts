@@ -120,9 +120,17 @@ const getSingleByIdFromDB = async (user:IJWTPayload, bookingId:string)=>{
 }
 
 const getMyBooking = async (user: IJWTPayload) => {
-    if(user.role !== UserRole.USER){
+    if(user.role !== UserRole.USER && user.role !== UserRole.GUIDE){
         throw new Error("Only users can view their bookings");
     }
+    if (user.role === UserRole.GUIDE) {
+    return prisma.booking.findMany({
+        where: {
+            tour: { guideId: user.id }
+        },
+        include: { tour: true, user: true }
+    });
+}
     const bookings = await prisma.booking.findMany({
         where: {
             userId: user.id
@@ -135,56 +143,58 @@ const getMyBooking = async (user: IJWTPayload) => {
         }
     })
     
+    
       return bookings
 }
 
-const updateIntoDB = async (user:IJWTPayload, tourId: string, bookingDate:Date)=>{
-    if(user.role !== UserRole.USER){
-        throw new Error("Only users can create bookings");
+const updateIntoDB = async (user:IJWTPayload, bookingId:string, payload:any)=>{
+    
+    const existingBooking = await prisma.booking.findUniqueOrThrow({
+        where:{id: bookingId},
+        include: {tour: true}
+    })
+
+    if(user.role === UserRole.USER && existingBooking.userId !== user.id){
+        throw new Error("You are not authorized to update this booking");
+    }
+    // date chane or cancel booking logic
+    const allowedFieldsForUser = ["bookingDate", "status"];
+    const allowedStatusForUser = ["CANCELLED"];
+
+    if(user.role === UserRole.USER){
+        Object.keys(payload).forEach(key => {
+            if (!allowedFieldsForUser.includes(key)) {
+                delete payload[key];
+            }
+        });
+
+        if (payload.status && !allowedStatusForUser.includes(payload.status)) {
+            throw new Error("Invalid status for user");
+        }
     }
 
-    const dbUser = await prisma.user.findUniqueOrThrow({
-        where:{email:user.email}
-    })
+    if(Object.keys(payload).length === 0){
+        throw new Error("No valid fields to update");
+    }
 
-    const tour = await prisma.tour.findUniqueOrThrow({where:{id: tourId}});
-
-
-    const booking = await prisma.booking.create({
-        data:{
-            tourId,
-            userId: user.id,
-            bookingDate,
-            totalPrice: tour.price
+    const updatedBooking = await prisma.booking.update({
+        where:{id: bookingId},
+        data:payload,
+        include: {
+            tour: true,
+            user: true
         }
     })
-    console.log("bookingData", booking)
+    
      
-    return booking
+    return  updatedBooking
 }
-const deleteFromDB = async (user:IJWTPayload, tourId: string, bookingDate:Date)=>{
-    if(user.role !== UserRole.USER){
-        throw new Error("Only users can create bookings");
-    }
-
-    const dbUser = await prisma.user.findUniqueOrThrow({
-        where:{email:user.email}
+const deleteFromDB = async (bookingId:string)=>{
+    const result = await prisma.booking.delete({
+        where:{id: bookingId}
     })
-
-    const tour = await prisma.tour.findUniqueOrThrow({where:{id: tourId}});
-
-
-    const booking = await prisma.booking.create({
-        data:{
-            tourId,
-            userId: user.id,
-            bookingDate,
-            totalPrice: tour.price
-        }
-    })
-    console.log("bookingData", booking)
-     
-    return booking
+    return result   
+    
 }
 
 
