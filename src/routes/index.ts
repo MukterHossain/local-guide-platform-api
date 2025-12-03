@@ -4,6 +4,7 @@ import { AuthRoutes } from '../modules/auth/auth.routes';
 import { BookingRoutes } from '../modules/bookings/booking.routes';
 import { TourRoutes } from '../modules/tour/tour.routes';
 import { CategoryRoutes } from '../modules/category/category.routes';
+import { TourCategoryRoutes } from '../modules/tourCategory/tourCategory.routes';
 
 
 const router = express.Router();
@@ -28,6 +29,10 @@ const moduleRoutes = [
     {
         path: '/category',
         route: CategoryRoutes
+    },
+    {
+        path: '/tour-category',
+        route: TourCategoryRoutes
     },
 ];
 
