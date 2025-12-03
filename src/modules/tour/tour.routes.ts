@@ -23,10 +23,13 @@ router.get("/", auth(UserRole.ADMIN), TourController.getAllFromDB)
 
 
 router.post("/",
-    auth(UserRole.GUIDE, UserRole.ADMIN), validateRequest(tourValidation.tourCreateValidation), TourController.createTour
+    auth(UserRole.GUIDE, UserRole.ADMIN), 
+    validateRequest(tourValidation.tourCreateValidation), 
+    TourController.createTour
     )
 router.patch("/:tourId",
-    auth(UserRole.GUIDE, UserRole.ADMIN), validateRequest(tourValidation.tourUpdateValidation), TourController.updateIntoDB
+    auth(UserRole.GUIDE, UserRole.ADMIN), 
+    validateRequest(tourValidation.tourUpdateValidation), TourController.updateIntoDB
     )
 router.delete("/:tourId",
     auth(UserRole.GUIDE, UserRole.ADMIN), TourController.deleteFromDB
