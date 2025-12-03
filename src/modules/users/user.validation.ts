@@ -12,22 +12,32 @@ const profileValidation = z.object({
 
 const createUserValidation = z.object({
     password: z.string({
-        error: "Password is required",
+        message: "Password is required",
     }),
     name: z.string({
-        error: "Name is required!",
+        message: "Name is required!",
     }),
     email: z.string({
-        error: "Email is required!",
+        message: "Email is required!",
     }),
     phone: z.string({
-        error: "Contact Number is required!",
+        message: "Contact Number is required!",
     }),
     image: z.string().optional(),
     address: z.string().optional(),
      role: z.enum(["USER", "GUIDE"]).default("USER"),
      profile: profileValidation
    
+});
+
+const createAdminValidation = z.object({
+  password: z.string({ message: "Password is required" }),
+  name: z.string({ message: "Name is required" }),
+  email: z.string({ message: "Email is required" }),
+  phone: z.string({ message: "Contact Number is required" }),
+  image: z.string().optional(),
+  address: z.string().optional(),
+  role: z.enum(["ADMIN"]), 
 });
 
 
@@ -42,5 +52,6 @@ const updateStatus = z.object({
 export const userValidation = {
     profileValidation,
     createUserValidation,
+    createAdminValidation,
     updateStatus
 };

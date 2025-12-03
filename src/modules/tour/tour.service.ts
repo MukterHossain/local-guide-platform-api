@@ -6,8 +6,8 @@ import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { tourSearchableFields } from "./tour.constant";
 
 const createTour = async (user:IJWTPayload, tourData: any)=>{
-    if(!["GUIDE", "ADMIN"].includes(user.role)) {
-        throw new Error("Only Guide/Admin can create tours");
+    if(user.role !== UserRole.GUIDE){    
+        throw new Error("Only Guide can create tours");
     }
 
     const isExist = await prisma.tour.findFirst({

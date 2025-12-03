@@ -66,9 +66,9 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
 
 
 
-const deleteFromDB = async (tourId:string)=>{
+const deleteFromDB = async (tourCategoryId:string)=>{
     const result = await prisma.tourCategory.delete({
-        where:{id: tourId}
+        where:{id: tourCategoryId}
     })
     return result   
     

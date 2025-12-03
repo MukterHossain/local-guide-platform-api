@@ -14,10 +14,6 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
         throw new Error("User already exists")
     }
 
-    if (role === UserRole.ADMIN) {
-        throw new Error("Admin cannot be created from this route.")
-    }
-
     if (role === UserRole.GUIDE && !profile) {
         throw new Error("Guide profile data is required")
     }
@@ -110,6 +106,71 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
     }
 
     return user as UserWithProfile
+}
+const createAdmin = async (req: Request): Promise<UserWithProfile> => {
+    const { email, password, name, phone, address } = req.body;
+    const exists = await prisma.user.findUnique({ where: { email } })
+    if (exists) {
+        throw new Error("Admin already exists")
+    }
+
+    // if (role === UserRole.ADMIN) {
+    //     throw new Error("Admin cannot be created from this route.")
+    // }
+
+    
+
+    const hasshedPassword = await bcrypt.hash(req.body.password, 10);
+
+
+    let admin = await prisma.user.create({
+        data: {
+            email, password: hasshedPassword, name, phone, role: "ADMIN", address, image: null
+        },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true,
+            role: true,
+            address: true,
+            image: true,
+            needPasswordChange: true,
+            status: true,
+            isDeleted: true,
+            ratingAvg: true,
+            createdAt: true,
+            updatedAt: true
+        }
+    })
+    if (req.file) {
+        const uploadResult = await fileUploader.uploadToCloudinary(req.file)
+        console.log("uploadResult", uploadResult);
+        admin = await prisma.user.update({
+            where: { id: admin.id },
+            data: { image: uploadResult?.secure_url },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,
+                role: true,
+                address: true,
+                image: true,
+                needPasswordChange: true,
+                status: true,
+                isDeleted: true,
+                ratingAvg: true,
+                createdAt: true,
+                updatedAt: true
+            }
+        })
+    }
+
+    
+
+
+    return admin as UserWithProfile
 }
 
 
@@ -289,6 +350,7 @@ const getMyProfile = async (user: IJWTPayload) => {
 
 export const UserService = {
     createUser,
+    createAdmin,
     getAllFromDB,
     getMyProfile
 }

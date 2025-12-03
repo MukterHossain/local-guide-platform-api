@@ -12,13 +12,14 @@ const router = express.Router();
 
 
 
-router.get("/:categoryId",
-    auth(UserRole.ADMIN),
-    CategoryController.getSingleByIdFromDB)
+
 
 router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.USER), CategoryController.getAllFromDB)
 
-
+router.get("/:categoryId",
+    auth(UserRole.ADMIN),
+    CategoryController.getSingleByIdFromDB
+)
 
 router.post("/",
     auth(UserRole.ADMIN), 

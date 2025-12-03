@@ -5,61 +5,73 @@ import { prisma } from "../../shared/prisma";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { bookingSearchableFields } from "./booking.constant";
 
-const createBooking = async (user:IJWTPayload, tourId: string, bookingDate:Date)=>{
-    if(user.role !== UserRole.USER){
+const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Date) => {
+    if (user.role !== UserRole.USER) {
         throw new Error("Only users can create bookings");
     }
 
-    // const dbUser = await prisma.user.findUniqueOrThrow({
-    //     where:{email:user.email}
-    // })
+    const tour = await prisma.tour.findUniqueOrThrow({ where: { id: tourId } });
 
-    const tour = await prisma.tour.findUniqueOrThrow({where:{id: tourId}});
+    const availability = await prisma.availability.findFirst({
+        where: {
+            guideId: tour.guideId,
+            startAt: { lte: bookingDate },
+            endAt: { gte: bookingDate },
+            isBooked: false
+        }
+    })
 
+    if (!availability) {
+        throw new Error("No available slot for the selected date");
+    }
 
     const booking = await prisma.booking.create({
-        data:{
+        data: {
             tourId,
             userId: user.id,
             bookingDate,
-            totalPrice: tour.price
+            totalPrice: tour.price,
+            availabilityId: availability.id
         }
     })
-    console.log("bookingData", booking)
-     
+    await prisma.availability.update({
+        where: { id: availability.id },
+        data: { isBooked: true }
+    });
+
     return booking
 }
-const getAllFromDB =async(params:any, options: IOptions)=>{
- 
+const getAllFromDB = async (params: any, options: IOptions) => {
+
     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
     const { searchTerm, ...filterData } = params;
 
     const andConditions: Prisma.BookingWhereInput[] = [];
-    
-        if (searchTerm) {
-            andConditions.push({
-                OR: bookingSearchableFields.map(field => ({
-                    [field]: {
-                        contains: searchTerm,
-                        mode: "insensitive"
-                    }
-                }))
-            })
-        }
-    
-        if (Object.keys(filterData).length > 0) {
-            andConditions.push({
-                AND: Object.keys(filterData).map(key => ({
-                    [key]: {
-                        equals: (filterData as any)[key]
-                    }
-                }))
-            })
-        }
-    
-        const whereConditions: Prisma.BookingWhereInput = andConditions.length > 0 ? {
-            AND: andConditions
-        } : {}
+
+    if (searchTerm) {
+        andConditions.push({
+            OR: bookingSearchableFields.map(field => ({
+                [field]: {
+                    contains: searchTerm,
+                    mode: "insensitive"
+                }
+            }))
+        })
+    }
+
+    if (Object.keys(filterData).length > 0) {
+        andConditions.push({
+            AND: Object.keys(filterData).map(key => ({
+                [key]: {
+                    equals: (filterData as any)[key]
+                }
+            }))
+        })
+    }
+
+    const whereConditions: Prisma.BookingWhereInput = andConditions.length > 0 ? {
+        AND: andConditions
+    } : {}
     const bookings = await prisma.booking.findMany({
         where: whereConditions,
         skip: skip,
@@ -76,16 +88,17 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
         where: whereConditions
     })
     return {
-        meta:{
-        page,
-        limit,
-        total
-    }, 
-    data:bookings}
+        meta: {
+            page,
+            limit,
+            total
+        },
+        data: bookings
+    }
 }
-const getSingleByIdFromDB = async (user:IJWTPayload, bookingId:string)=>{
+const getSingleByIdFromDB = async (user: IJWTPayload, bookingId: string) => {
     const booking = await prisma.booking.findUniqueOrThrow({
-        where:{id: bookingId},
+        where: { id: bookingId },
         include: {
             tour: true,
             user: {
@@ -105,32 +118,32 @@ const getSingleByIdFromDB = async (user:IJWTPayload, bookingId:string)=>{
         }
     })
 
-    if(!booking){
+    if (!booking) {
         throw new Error("Booking not found");
     }
-    
-    if(user.role === UserRole.USER && booking.userId !== user.id){
+
+    if (user.role === UserRole.USER && booking.userId !== user.id) {
         throw new Error("You are not authorized to view this booking");
     }
-    if(user.role === UserRole.GUIDE && booking.tour.guideId !== user.id){
+    if (user.role === UserRole.GUIDE && booking.tour.guideId !== user.id) {
         throw new Error("You are not authorized to view this booking");
     }
-     
+
     return booking
 }
 
 const getMyBooking = async (user: IJWTPayload) => {
-    if(user.role !== UserRole.USER && user.role !== UserRole.GUIDE){
+    if (user.role !== UserRole.USER && user.role !== UserRole.GUIDE) {
         throw new Error("Only users can view their bookings");
     }
     if (user.role === UserRole.GUIDE) {
-    return prisma.booking.findMany({
-        where: {
-            tour: { guideId: user.id }
-        },
-        include: { tour: true, user: true }
-    });
-}
+        return prisma.booking.findMany({
+            where: {
+                tour: { guideId: user.id }
+            },
+            include: { tour: true, user: true }
+        });
+    }
     const bookings = await prisma.booking.findMany({
         where: {
             userId: user.id
@@ -142,26 +155,26 @@ const getMyBooking = async (user: IJWTPayload) => {
             createdAt: "desc"
         }
     })
-    
-    
-      return bookings
+
+
+    return bookings
 }
 
-const updateIntoDB = async (user:IJWTPayload, bookingId:string, payload:any)=>{
-    
+const updateIntoDB = async (user: IJWTPayload, bookingId: string, payload: any) => {
+
     const existingBooking = await prisma.booking.findUniqueOrThrow({
-        where:{id: bookingId},
-        include: {tour: true}
+        where: { id: bookingId },
+        include: { tour: true }
     })
 
-    if(user.role === UserRole.USER && existingBooking.userId !== user.id){
+    if (user.role === UserRole.USER && existingBooking.userId !== user.id) {
         throw new Error("You are not authorized to update this booking");
     }
     // date chane or cancel booking logic
     const allowedFieldsForUser = ["bookingDate", "status"];
     const allowedStatusForUser = ["CANCELLED"];
 
-    if(user.role === UserRole.USER){
+    if (user.role === UserRole.USER) {
         Object.keys(payload).forEach(key => {
             if (!allowedFieldsForUser.includes(key)) {
                 delete payload[key];
@@ -173,28 +186,28 @@ const updateIntoDB = async (user:IJWTPayload, bookingId:string, payload:any)=>{
         }
     }
 
-    if(Object.keys(payload).length === 0){
+    if (Object.keys(payload).length === 0) {
         throw new Error("No valid fields to update");
     }
 
     const updatedBooking = await prisma.booking.update({
-        where:{id: bookingId},
-        data:payload,
+        where: { id: bookingId },
+        data: payload,
         include: {
             tour: true,
             user: true
         }
     })
-    
-     
-    return  updatedBooking
+
+
+    return updatedBooking
 }
-const deleteFromDB = async (bookingId:string)=>{
+const deleteFromDB = async (bookingId: string) => {
     const result = await prisma.booking.delete({
-        where:{id: bookingId}
+        where: { id: bookingId }
     })
-    return result   
-    
+    return result
+
 }
 
 

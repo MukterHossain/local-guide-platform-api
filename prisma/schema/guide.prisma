@@ -7,7 +7,8 @@ model Availability {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    guide User @relation(fields: [guideId], references: [id], onDelete: Cascade)
+    guide    User      @relation(fields: [guideId], references: [id], onDelete: Cascade)
+    bookings Booking[]
 
     @@unique([guideId, startAt, endAt])
     @@map("availabilities")

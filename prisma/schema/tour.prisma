@@ -24,6 +24,7 @@ model Booking {
     id            String        @id @default(cuid())
     tourId        String
     userId        String
+    availabilityId String 
     bookingDate   DateTime
     status        BookingStatus @default(PENDING)
     totalPrice    Float
@@ -32,6 +33,7 @@ model Booking {
     updatedAt     DateTime      @updatedAt
 
     tour Tour @relation("TourBookings", fields: [tourId], references: [id], onDelete: Cascade)
+    availability   Availability @relation(fields: [availabilityId], references: [id])
     user    User     @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
     payment Payment? @relation("BookingPayment")
 

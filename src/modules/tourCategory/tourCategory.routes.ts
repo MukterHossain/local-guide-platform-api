@@ -23,7 +23,7 @@ router.post("/",
     TourCategoryController.inserIntoDB
     )
 
-router.delete("/:tourId",
+router.delete("/:tourCategoryId",
     auth(UserRole.ADMIN), TourCategoryController.deleteFromDB
     )
 

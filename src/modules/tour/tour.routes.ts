@@ -18,7 +18,7 @@ router.get("/:tourId",
     auth(UserRole.ADMIN, UserRole.GUIDE),
     TourController.getSingleByIdFromDB)
 
-router.get("/", auth(UserRole.ADMIN), TourController.getAllFromDB)
+router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE), TourController.getAllFromDB)
 
 
 

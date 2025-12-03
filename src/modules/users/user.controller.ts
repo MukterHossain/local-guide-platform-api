@@ -18,6 +18,17 @@ const createUser = catchAsync (async (req:Request, res:Response) =>{
         data: result
     })
 })
+const createAdmin = catchAsync (async (req:Request, res:Response) =>{
+    const result = await UserService.createAdmin(req)
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Admin created successfully",
+        data: result
+    })
+})
 
 const getAllFromDB = catchAsync (async (req:Request , res:Response) =>{
      const filters = pick(req.query, userFilterableFields) // searching , filtering
@@ -50,6 +61,7 @@ const getMyProfile = catchAsync (async (req:Request & { user?: IJWTPayload }, re
 
 export const UserController = {
     createUser,
+    createAdmin,
     getAllFromDB,
     getMyProfile
 }
