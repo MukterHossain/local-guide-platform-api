@@ -1,11 +1,11 @@
 import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
-import { Request } from "express";
 import { IJWTPayload } from "../../types/common";
 import { prisma } from "../../shared/prisma";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { tourSearchableFields } from "./tour.constant";
+import { fileUploader } from "../../helper/fileUploader";
 
-const createTour = async (user:IJWTPayload, tourData: any)=>{
+const inserIntoDB = async (user:IJWTPayload,  tourData: any, files: Express.Multer.File[])=>{
     if(user.role !== UserRole.GUIDE){    
         throw new Error("Only Guide can create tours");
     }
@@ -20,6 +20,11 @@ const createTour = async (user:IJWTPayload, tourData: any)=>{
 
     if(isExist){
         throw new Error("Tour already created. Please modify data.");
+    }
+    // const files = req.files as Express.Multer.File[];
+              if (files && files.length > 0) {
+        const imageUrls = await fileUploader.uploadToCloudinary(files); 
+        tourData.images = imageUrls; 
     }
     const tour = await prisma.tour.create({
         data: {
@@ -126,7 +131,7 @@ const getSingleByIdFromDB = async (user:IJWTPayload, tourId:string)=>{
     if(user.role === UserRole.ADMIN){
         return tour
     }
-    if(user.role === UserRole.USER){
+    if(user.role === UserRole.TOURIST){
         return tour
     }
     
@@ -139,7 +144,7 @@ const getSingleByIdFromDB = async (user:IJWTPayload, tourId:string)=>{
 
 const getMyTours = async (user: IJWTPayload) => {
     if(user.role !== UserRole.ADMIN && user.role !== UserRole.GUIDE){
-        throw new Error("Only users can view their bookings");
+        throw new Error("Only Tourist can view their bookings");
     }
     if (user.role === UserRole.GUIDE) {
     return prisma.tour.findMany({
@@ -173,15 +178,15 @@ const updateIntoDB = async (user:IJWTPayload, tourId:string, payload:any)=>{
         where:{id: tourId}
     })
 
-    if(user.role === UserRole.USER ){
-        throw new Error("Users are not allowed to update tour");
+    if(user.role === UserRole.TOURIST ){
+        throw new Error("Tourist are not allowed to update tour");
     }
 
     if(user.role === UserRole.GUIDE && existingBooking.guideId !== user.id){
         throw new Error("You are not authorized to update this tour");
     }
     // date chane or cancel booking logic
-    const allowedFields = ["title", "description", "price", "durationHours", "maxPeople", "city", "meetingPoint", "categories", "images"];
+    const allowedFields = ["title", "description", "tourFee", "durationHours", "maxPeople", "city", "meetingPoint", "categories", "images"];
 
     Object.keys(payload).forEach(key => {
             if (!allowedFields.includes(key)) {
@@ -198,7 +203,7 @@ const updateIntoDB = async (user:IJWTPayload, tourId:string, payload:any)=>{
         data:payload,
         include: {
         guide: true,
-        images: true,
+        // images: true,
         categories: true
         }
     })
@@ -224,7 +229,7 @@ const deleteFromDB = async (tourId:string)=>{
 
 
 export const TourService = {
-    createTour,
+    inserIntoDB,
     getAllFromDB,
     getSingleByIdFromDB,
     getMyTours,

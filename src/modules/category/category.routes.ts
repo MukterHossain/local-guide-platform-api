@@ -14,7 +14,7 @@ const router = express.Router();
 
 
 
-router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.USER), CategoryController.getAllFromDB)
+router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), CategoryController.getAllFromDB)
 
 router.get("/:categoryId",
     auth(UserRole.ADMIN),

@@ -6,8 +6,8 @@ import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { bookingSearchableFields } from "./booking.constant";
 
 const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Date) => {
-    if (user.role !== UserRole.USER) {
-        throw new Error("Only users can create bookings");
+    if (user.role !== UserRole.TOURIST) {
+        throw new Error("Only TOURIST can create bookings");
     }
 
     const tour = await prisma.tour.findUniqueOrThrow({ where: { id: tourId } });
@@ -30,7 +30,7 @@ const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Dat
             tourId,
             userId: user.id,
             bookingDate,
-            totalPrice: tour.price,
+            totalFee: tour.tourFee,
             availabilityId: availability.id
         }
     })
@@ -122,7 +122,7 @@ const getSingleByIdFromDB = async (user: IJWTPayload, bookingId: string) => {
         throw new Error("Booking not found");
     }
 
-    if (user.role === UserRole.USER && booking.userId !== user.id) {
+    if (user.role === UserRole.TOURIST && booking.userId !== user.id) {
         throw new Error("You are not authorized to view this booking");
     }
     if (user.role === UserRole.GUIDE && booking.tour.guideId !== user.id) {
@@ -133,8 +133,8 @@ const getSingleByIdFromDB = async (user: IJWTPayload, bookingId: string) => {
 }
 
 const getMyBooking = async (user: IJWTPayload) => {
-    if (user.role !== UserRole.USER && user.role !== UserRole.GUIDE) {
-        throw new Error("Only users can view their bookings");
+    if (user.role !== UserRole.TOURIST && user.role !== UserRole.GUIDE) {
+        throw new Error("Only Tourist can view their bookings");
     }
     if (user.role === UserRole.GUIDE) {
         return prisma.booking.findMany({
@@ -167,14 +167,14 @@ const updateIntoDB = async (user: IJWTPayload, bookingId: string, payload: any) 
         include: { tour: true }
     })
 
-    if (user.role === UserRole.USER && existingBooking.userId !== user.id) {
+    if (user.role === UserRole.TOURIST && existingBooking.userId !== user.id) {
         throw new Error("You are not authorized to update this booking");
     }
     // date chane or cancel booking logic
     const allowedFieldsForUser = ["bookingDate", "status"];
     const allowedStatusForUser = ["CANCELLED"];
 
-    if (user.role === UserRole.USER) {
+    if (user.role === UserRole.TOURIST) {
         Object.keys(payload).forEach(key => {
             if (!allowedFieldsForUser.includes(key)) {
                 delete payload[key];

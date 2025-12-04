@@ -7,7 +7,7 @@ model User {
     image              String?
     address            String?
     needPasswordChange Boolean    @default(true)
-    role               UserRole   @default(USER)
+    role               UserRole   @default(TOURIST)
     ratingAvg          Float?     @default(0)
     isDeleted          Boolean    @default(false)
     status             UserStatus @default(ACTIVE)
@@ -20,7 +20,6 @@ model User {
     reviews        Review[]        @relation("UserReviews")
     guideReviews   Review[]        @relation("GuideReviews")
     guideLocations GuideLocation[] @relation("GuideLocations")
-    notifications  Notification[]
     wishlist       Wishlist[]
     reportsFiled   Report[]        @relation("ReportReporter")
     reportsAgainst Report[]        @relation("ReportGuide")
@@ -37,10 +36,9 @@ model Profile {
     experienceYears    Int?
     locationId         String?
     location           Location?               @relation(fields: [locationId], references: [id])
-    pricePerHour       Float?
+    feePerHour       Float?
     availableStatus    Boolean                 @default(true)
     verificationStatus GuideVerificationStatus @default(PENDING)
-    nidOrPassportUrl   String? // url to uploaded document
     adminNote          String?
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -34,7 +34,7 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
     const { searchTerm, ...filterData } = params;
 
-    const andConditions: Prisma.AvailabilityWhereInput[] = [];
+    const andConditions: Prisma.LocationWhereInput[] = [];
     
         if (searchTerm) {
             andConditions.push({
@@ -57,10 +57,10 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
             })
         }
     
-        const whereConditions: Prisma.AvailabilityWhereInput = andConditions.length > 0 ? {
+        const whereConditions: Prisma.LocationWhereInput = andConditions.length > 0 ? {
             AND: andConditions
         } : {}
-    const categories = await prisma.availability.findMany({
+    const findData = await prisma.location.findMany({
         where: whereConditions,
         skip: skip,
         take: Number(limit),
@@ -68,10 +68,12 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
             [sortBy]: sortOrder
         },
         include: {
-            guide: true
+            guideLocations: true,
+            profiles: true
+            
         }
     })
-    const total = await prisma.availability.count({
+    const total = await prisma.location.count({
         where: whereConditions
     })
     return {
@@ -80,61 +82,68 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
         limit,
         total
     }, 
-    data:categories}
+    data:findData
 }
-const getSingleByIdFromDB = async (user:IJWTPayload, availabilityId:string)=>{
+}
+const getSingleByIdFromDB = async (user:IJWTPayload, locationId:string)=>{
     if(user.role !== UserRole.GUIDE && user.role !== UserRole.ADMIN){
-        throw new Error("Only Guide or Admin is allowed to access availability details");
+        throw new Error("Only Guide or Admin is allowed to access location details");
     }
-    const availability = await prisma.availability.findUniqueOrThrow({
-        where:{id: availabilityId},
+    const location = await prisma.location.findUniqueOrThrow({
+        where:{id: locationId},
         
         include: {
-            guide: true
+            guideLocations: true,
+            profiles: true
         }
     })
 
-    if(!availability){
-        throw new Error("Availability not found");
+    if(!location){
+        throw new Error("Location not found");
     }
      
-    return availability
+    return location
 }
 
 
 
-const updateIntoDB = async (user:IJWTPayload, availabilityId:string, startAt: Date, endAt: Date)=>{
-    const avail = await prisma.availability.findUniqueOrThrow({ where: { id: availabilityId } });
+const updateIntoDB = async (user:IJWTPayload, locationId:string, city:string, country:string)=>{
+    const exists = await prisma.location.findUniqueOrThrow({ where: { id: locationId } });
     
-    if(user.role !== UserRole.GUIDE || avail.guideId !== user.id){
-        throw new Error("Only the guide can update availability");
+    if(user.role !== UserRole.ADMIN ){
+        throw new Error("Only the Admin can update location");
+    }
+
+    if(!exists){
+        throw new Error("Location not found")
     }
     
     
-    const allowedFields = ["startAt", "endAt"];
+    const allowedFields = ["city", "country"];
 
     const filteredData = Object.fromEntries(
-        Object.entries( {startAt, endAt}).filter(([key]) => allowedFields.includes(key))
+        Object.entries( {city, country}).filter(([key]) => allowedFields.includes(key))
     )
 
     if(Object.keys(filteredData).length === 0){
         throw new Error("No valid fields to update");
     }
 
-    const updateData = await prisma.availability.update({
-        where:{id: availabilityId},
+    const updateData = await prisma.location.update({
+        where:{id: locationId},
         data:filteredData,
         include: {
-            guide: true
+            guideLocations: true,
+            profiles: true
         }
     })
     
      
     return  updateData
 }
-const deleteFromDB = async (categoryId:string)=>{
-    const result = await prisma.category.delete({
-        where:{id: categoryId}
+const deleteFromDB = async (locationId:string)=>{
+    const result = await prisma.location.delete({
+        where:{id: locationId}
     })
     return result   
     

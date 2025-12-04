@@ -10,17 +10,25 @@ const router = express.Router();
 
 
 router.get("/me",
-    auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.USER),
+    auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
     UserController.getMyProfile)
-router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.USER), UserController.getAllFromDB)
+router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), UserController.getAllFromDB)
 
-router.post("/",
-     fileUploader.upload.single('file'),
+// router.post("/register",
+//      fileUploader.upload.single('file'),
+//     (req: Request, res: Response, next: NextFunction) => {
+//         req.body = userValidation.createUserValidation.parse(JSON.parse(req.body.data))
+//     return UserController.createUser(req, res, next)
+//     }
+//     )
+    router.post(
+    "/register",
+    fileUploader.upload.single("file"), // single image
     (req: Request, res: Response, next: NextFunction) => {
-        req.body = userValidation.createUserValidation.parse(JSON.parse(req.body.data))
-    return UserController.createUser(req, res, next)
+        req.body = userValidation.createUserValidation.parse(JSON.parse(req.body.data));
+        return UserController.createUser(req, res, next);
     }
-    )
+);
 router.post("/admin",
      fileUploader.upload.single('file'),
     (req: Request, res: Response, next: NextFunction) => {

@@ -10,8 +10,11 @@ import { userSearchableFields } from "./user.constant";
 const createUser = async (req: Request): Promise<UserWithProfile> => {
     const { role, profile, email, password } = req.body;
     const exists = await prisma.user.findUnique({ where: { email } })
-    if (exists) {
+    if (exists?.role === UserRole.TOURIST) {
         throw new Error("User already exists")
+    }
+    if (exists?.role === UserRole.GUIDE) {
+        throw new Error("Guide already exists")
     }
 
     if (role === UserRole.GUIDE && !profile) {
@@ -19,7 +22,7 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
     }
 
     if (role === UserRole.GUIDE) {
-        if (!profile.languages || !profile.experienceYears || !profile.pricePerHour) {
+        if (!profile.languages || !profile.experienceYears || !profile.feePerHour) {
             throw new Error("Missing guide profile fields.")
         }
     }
@@ -33,7 +36,7 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
             password: hasshedPassword,
             name: req.body.name,
             phone: req.body.phone,
-            role: req.body.role as UserRole || UserRole.USER,
+            role: req.body.role as UserRole || UserRole.TOURIST,
             address: req.body.address,
             image: null
         },
@@ -54,12 +57,12 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
         }
     })
     if (req.file) {
-        const uploadResult = await fileUploader.uploadToCloudinary(req.file)
+        const uploadResult = await fileUploader.uploadToCloudinary(req.file) as string;
         console.log("uploadResult", uploadResult);
         // req.body.image = uploadResult?.secure_url
         user = await prisma.user.update({
             where: { id: user.id },
-            data: { image: uploadResult?.secure_url },
+            data: { image: uploadResult },
             select: {
                 id: true,
                 email: true,
@@ -89,7 +92,7 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
                 bio: profile.bio,
                 languages: profile.languages || [],
                 experienceYears: profile.experienceYears,
-                pricePerHour: profile.pricePerHour,
+                feePerHour: profile.feePerHour,
                 locationId: profile.locationId,
             }
         })
@@ -144,11 +147,11 @@ const createAdmin = async (req: Request): Promise<UserWithProfile> => {
         }
     })
     if (req.file) {
-        const uploadResult = await fileUploader.uploadToCloudinary(req.file)
+        const uploadResult = await fileUploader.uploadToCloudinary(req.file) as string;
         console.log("uploadResult", uploadResult);
         admin = await prisma.user.update({
             where: { id: admin.id },
-            data: { image: uploadResult?.secure_url },
+            data: { image: uploadResult },
             select: {
                 id: true,
                 email: true,
@@ -264,7 +267,7 @@ const getMyProfile = async (user: IJWTPayload) => {
         }
     })
     let profileData;
-    if (userInfo.role === UserRole.USER) {
+    if (userInfo.role === UserRole.TOURIST) {
         profileData = await prisma.user.findUniqueOrThrow({
             where: {
                 email: user.email,

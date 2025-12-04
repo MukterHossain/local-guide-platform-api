@@ -1,6 +1,3 @@
-export const locationSearchableFields = ["guideId"];
+export const locationSearchableFields = ["city" ,"country"];
 
-export const locationFilterableFields = [ "guideId",
-  "startAt",
-  "endAt",
-  "isBooked", "searchTerm"]
+export const locationFilterableFields = [ "city", "country", "searchTerm"]

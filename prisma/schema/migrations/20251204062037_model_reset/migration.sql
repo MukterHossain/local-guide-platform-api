@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "UserRole" AS ENUM ('USER', 'GUIDE', 'ADMIN');
+CREATE TYPE "UserRole" AS ENUM ('TOURIST', 'GUIDE', 'ADMIN');
 
 -- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'PENDING', 'BLOCKED', 'DELETED');
@@ -107,6 +107,8 @@ CREATE TABLE "guideLocations" (
     "id" TEXT NOT NULL,
     "guideId" TEXT NOT NULL,
     "locationId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "guideLocations_pkey" PRIMARY KEY ("id")
 );
@@ -133,6 +135,7 @@ CREATE TABLE "bookings" (
     "id" TEXT NOT NULL,
     "tourId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "availabilityId" TEXT NOT NULL,
     "bookingDate" TIMESTAMP(3) NOT NULL,
     "status" "BookingStatus" NOT NULL DEFAULT 'PENDING',
     "totalPrice" DOUBLE PRECISION NOT NULL,
@@ -190,9 +193,12 @@ CREATE TABLE "users" (
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "phone" TEXT,
+    "image" TEXT,
+    "address" TEXT,
     "needPasswordChange" BOOLEAN NOT NULL DEFAULT true,
-    "role" "UserRole" NOT NULL DEFAULT 'USER',
+    "role" "UserRole" NOT NULL DEFAULT 'TOURIST',
     "ratingAvg" DOUBLE PRECISION DEFAULT 0,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "status" "UserStatus" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -273,6 +279,9 @@ ALTER TABLE "tours" ADD CONSTRAINT "tours_guideId_fkey" FOREIGN KEY ("guideId") 
 
 -- AddForeignKey
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_tourId_fkey" FOREIGN KEY ("tourId") REFERENCES "tours"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "bookings" ADD CONSTRAINT "bookings_availabilityId_fkey" FOREIGN KEY ("availabilityId") REFERENCES "availabilities"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

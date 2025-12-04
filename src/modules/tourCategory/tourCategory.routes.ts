@@ -13,7 +13,7 @@ const router = express.Router();
 
 
 
-router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.USER), TourCategoryController.getAllFromDB)
+router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), TourCategoryController.getAllFromDB)
 
 
 

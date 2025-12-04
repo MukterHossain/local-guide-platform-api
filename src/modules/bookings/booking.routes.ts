@@ -8,22 +8,22 @@ const router = express.Router();
 
 
 router.get("/me",
-    auth(UserRole.USER , UserRole.GUIDE),
+    auth(UserRole.TOURIST , UserRole.GUIDE),
     BookingController.getMyBooking)
 router.get("/:bookingId",
-    auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.USER),
+    auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
     BookingController.getSingleByIdFromDB)
 
 router.get("/", auth(UserRole.ADMIN), BookingController.getAllFromDB)
 
 router.post("/",
-    auth(UserRole.USER), BookingController.createBooking
+    auth(UserRole.TOURIST), BookingController.createBooking
 )
 router.patch("/:bookingId",
-    auth(UserRole.USER, UserRole.ADMIN), BookingController.updateIntoDB
+    auth(UserRole.TOURIST, UserRole.ADMIN), BookingController.updateIntoDB
 )
 router.delete("/:bookingId",
-    auth(UserRole.USER, UserRole.ADMIN), BookingController.deleteFromDB
+    auth(UserRole.TOURIST, UserRole.ADMIN), BookingController.deleteFromDB
 )
 
 

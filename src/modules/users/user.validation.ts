@@ -5,9 +5,8 @@ const profileValidation = z.object({
   bio: z.string().optional(),
   languages: z.array(z.string()).optional(),
   experienceYears: z.number().optional(),
-  pricePerHour: z.number().optional(),
+  feePerHour: z.number().optional(),
   locationId: z.string().optional(),
-  nidOrPassportUrl: z.string().optional(),
 }).optional();
 
 const createUserValidation = z.object({
@@ -25,7 +24,7 @@ const createUserValidation = z.object({
     }),
     image: z.string().optional(),
     address: z.string().optional(),
-     role: z.enum(["USER", "GUIDE"]).default("USER"),
+     role: z.enum(["TOURIST", "GUIDE"]).default("TOURIST"),
      profile: profileValidation
    
 });

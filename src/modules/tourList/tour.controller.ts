@@ -8,8 +8,8 @@ import { TourService } from "./tour.service";
 import pick from "../../helper/pick";
 import { tourFilterableFields } from "./tour.constant";
 
-const createTour = catchAsync (async (req:Request & { user?: IJWTPayload } , res:Response) =>{
-    const result = await TourService.createTour(req.user!, req.body );
+const inserIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload } , res:Response) =>{
+    const result = await TourService.inserIntoDB(req.user!, req.body, req.files as Express.Multer.File[]);
     console.log("result", result);
 
     sendResponse(res, {
@@ -96,7 +96,7 @@ const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
 
 
 export const TourController = {
-    createTour,
+    inserIntoDB,
     getAllFromDB,
     getSingleByIdFromDB,
     getMyTours,

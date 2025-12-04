@@ -4,76 +4,63 @@ import httpStatus from 'http-status'
 import sendResponse from "../../shared/sendResponse";
 import { IJWTPayload } from "../../types/common";
 import pick from "../../helper/pick";
-import { LocationService } from "./location.service";
-import { locationFilterableFields } from "./location.constant";
+import { GuideLocationService } from "./guideLocation.service";
+import { guideLocationFilterableFields } from "./guideLocation.constant";
 
 
 const inserIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload } , res:Response) =>{
-    const {city, country} = req.body;
-    const result = await LocationService.inserIntoDB(req.user!, city, country );
+    const {guideId, locationId} = req.body;
+    const result = await GuideLocationService.inserIntoDB(req.user!, guideId, locationId );
     console.log("result", result);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "Location created successfully",
+        message: "GuideLocation created successfully",
         data: result
     })
 })
 
 const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
     
-    const filters = pick(req.query, locationFilterableFields) 
+    const filters = pick(req.query, guideLocationFilterableFields) 
     const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
 
-    const result = await LocationService.getAllFromDB(filters, options);
+    const result = await GuideLocationService.getAllFromDB(filters, options);
     console.log("result", result);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "Location fetched successfully",
+        message: "GuideLocation fetched successfully",
         meta: result.meta,
         data: result.data
     })
 })
 const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-   const {locationId} = req.params; 
+   const {guideLocationId} = req.params; 
   
-    const result = await LocationService.getSingleByIdFromDB(req.user as IJWTPayload, locationId);
+    const result = await GuideLocationService.getSingleByIdFromDB(req.user as IJWTPayload, guideLocationId);
     console.log("result", result);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "Location fetched successfully",
+        message: "GuideLocation fetched successfully",
         data: result
     })
 })
 
-const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-  const user = req.user  
-  const locationId = req.params.locationId;
-  const {city, country}= req.body;
-    const result = await LocationService.updateIntoDB(user as IJWTPayload , locationId, city, country);
-    console.log("result", result);
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "Location updated successfully",
-        data: result
-    })
-})
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const locationId = req.params.locationId;
-    const result = await LocationService.deleteFromDB(locationId);
+  const guideLocationId = req.params.guideLocationId;
+    const result = await GuideLocationService.deleteFromDB(guideLocationId);
     console.log("result delete", result);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "Location deleted successfully",
+        message: "GuideLocation deleted successfully",
         data: null
     })
 })
@@ -86,10 +73,9 @@ const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
 
 
 
-export const LocationController = {
+export const GuideLocationController = {
     inserIntoDB,
     getAllFromDB,
     getSingleByIdFromDB,
-    updateIntoDB,
     deleteFromDB
 }

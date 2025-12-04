@@ -5,7 +5,8 @@ model Tour {
     description   String
     city          String
     durationHours Int
-    price         Float
+    images        String[] @default([])
+    tourFee       Float
     maxPeople     Int
     meetingPoint  String?
     createdAt     DateTime @default(now())
@@ -14,28 +15,27 @@ model Tour {
     guide      User           @relation("GuideTours", fields: [guideId], references: [id], onDelete: Cascade)
     bookings   Booking[]      @relation("TourBookings")
     reviews    Review[]
-    images     TourImage[]   @relation("TourImages") 
     categories TourCategory[]
 
     @@map("tours")
 }
 
 model Booking {
-    id            String        @id @default(cuid())
-    tourId        String
-    userId        String
-    availabilityId String 
-    bookingDate   DateTime
-    status        BookingStatus @default(PENDING)
-    totalPrice    Float
-    paymentStatus PaymentStatus @default(UNPAID)
-    createdAt     DateTime      @default(now())
-    updatedAt     DateTime      @updatedAt
+    id             String        @id @default(cuid())
+    tourId         String
+    userId         String
+    availabilityId String
+    bookingDate    DateTime
+    status         BookingStatus @default(PENDING)
+    totalFee     Float
+    paymentStatus  PaymentStatus @default(UNPAID)
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime      @updatedAt
 
-    tour Tour @relation("TourBookings", fields: [tourId], references: [id], onDelete: Cascade)
-    availability   Availability @relation(fields: [availabilityId], references: [id])
-    user    User     @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
-    payment Payment? @relation("BookingPayment")
+    tour         Tour         @relation("TourBookings", fields: [tourId], references: [id], onDelete: Cascade)
+    availability Availability @relation(fields: [availabilityId], references: [id])
+    user         User         @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
+    payment      Payment?     @relation("BookingPayment")
 
     @@map("bookings")
 }
@@ -70,17 +70,4 @@ model Payment {
     booking Booking @relation("BookingPayment", fields: [bookingId], references: [id], onDelete: Cascade)
 
     @@map("payments")
-}
-
-model TourImage {
-    id        String   @id @default(cuid())
-    tourId    String
-    url       String
-    alt       String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    tour Tour @relation("TourImages", fields: [tourId], references: [id], onDelete: Cascade)
-
-    @@map("tourImages")
 }

@@ -44,17 +44,4 @@ model Report {
     @@map("reports")
 }
 
-model Notification {
-    id        String   @id @default(cuid())
-    userId    String
-    title     String?
-    message   String
-    meta      Json?
-    read      Boolean  @default(false)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    @@map("notifications")
-}

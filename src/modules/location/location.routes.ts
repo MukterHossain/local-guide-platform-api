@@ -14,9 +14,9 @@ const router = express.Router();
 
 
 
-router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE), LocationController.getAllFromDB)
+router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), LocationController.getAllFromDB)
 
-router.get("/:availabilityId",
+router.get("/:locationId",
     auth(UserRole.GUIDE, UserRole.ADMIN),
     LocationController.getSingleByIdFromDB
 )
@@ -26,12 +26,12 @@ router.post("/",
     validateRequest(LocationValidation.createLocationSchema), 
     LocationController.inserIntoDB
     )
-router.patch("/:availabilityId",
-    auth(UserRole.GUIDE), 
+router.patch("/:locationId",
+    auth(UserRole.ADMIN), 
     validateRequest(LocationValidation.updateLocaionSchema), 
     LocationController.updateIntoDB
     )
-router.delete("/:categoryId",
+router.delete("/:locationId",
     auth(UserRole.ADMIN), LocationController.deleteFromDB
     )
 

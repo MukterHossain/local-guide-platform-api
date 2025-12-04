@@ -6,6 +6,7 @@ import { IJWTPayload } from "../../types/common";
 import httpStatus from 'http-status'
 import { userFilterableFields } from "./user.constant";
 import pick from "../../helper/pick";
+import { fileUploader } from "../../helper/fileUploader";
 
 const createUser = catchAsync (async (req:Request, res:Response) =>{
     const result = await UserService.createUser(req)
