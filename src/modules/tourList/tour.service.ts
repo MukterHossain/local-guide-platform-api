@@ -4,10 +4,11 @@ import { prisma } from "../../shared/prisma";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { tourSearchableFields } from "./tour.constant";
 import { fileUploader } from "../../helper/fileUploader";
-
+import httpStatus from "http-status";
+import ApiError from "../../error/ApiError";
 const inserIntoDB = async (user:IJWTPayload,  tourData: any, files: Express.Multer.File[])=>{
     if(user.role !== UserRole.GUIDE){    
-        throw new Error("Only Guide can create tours");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Guide can create tours");
     }
 
     const isExist = await prisma.tour.findFirst({
@@ -19,7 +20,7 @@ const inserIntoDB = async (user:IJWTPayload,  tourData: any, files: Express.Mult
     })
 
     if(isExist){
-        throw new Error("Tour already created. Please modify data.");
+        throw new ApiError(httpStatus.BAD_REQUEST,"Tour already created. Please modify data.");
     }
     // const files = req.files as Express.Multer.File[];
               if (files && files.length > 0) {
@@ -125,7 +126,7 @@ const getSingleByIdFromDB = async (user:IJWTPayload, tourId:string)=>{
     })
 
     if(!tour){
-        throw new Error("Tour not found");
+        throw new ApiError(httpStatus.NOT_FOUND,"Tour not found");
     }
     
     if(user.role === UserRole.ADMIN){
@@ -136,7 +137,7 @@ const getSingleByIdFromDB = async (user:IJWTPayload, tourId:string)=>{
     }
     
     if(user.role === UserRole.GUIDE && tour.guideId !== user.id){
-        throw new Error("You are not authorized to view this booking");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"You are not authorized to view this booking");
     }
      
     return tour
@@ -144,7 +145,7 @@ const getSingleByIdFromDB = async (user:IJWTPayload, tourId:string)=>{
 
 const getMyTours = async (user: IJWTPayload) => {
     if(user.role !== UserRole.ADMIN && user.role !== UserRole.GUIDE){
-        throw new Error("Only Tourist can view their bookings");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Tourist can view their bookings");
     }
     if (user.role === UserRole.GUIDE) {
     return prisma.tour.findMany({
@@ -179,11 +180,11 @@ const updateIntoDB = async (user:IJWTPayload, tourId:string, payload:any)=>{
     })
 
     if(user.role === UserRole.TOURIST ){
-        throw new Error("Tourist are not allowed to update tour");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Tourist are not allowed to update tour");
     }
 
     if(user.role === UserRole.GUIDE && existingBooking.guideId !== user.id){
-        throw new Error("You are not authorized to update this tour");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"You are not authorized to update this tour");
     }
     // date chane or cancel booking logic
     const allowedFields = ["title", "description", "tourFee", "durationHours", "maxPeople", "city", "meetingPoint", "categories", "images"];
@@ -195,7 +196,7 @@ const updateIntoDB = async (user:IJWTPayload, tourId:string, payload:any)=>{
         });
 
     if(Object.keys(payload).length === 0){
-        throw new Error("No valid fields to update");
+        throw new ApiError(httpStatus.BAD_REQUEST,"No valid fields to update");
     }
 
     const updatedTour = await prisma.tour.update({

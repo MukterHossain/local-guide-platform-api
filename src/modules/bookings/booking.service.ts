@@ -4,13 +4,19 @@ import { IJWTPayload } from "../../types/common";
 import { prisma } from "../../shared/prisma";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { bookingSearchableFields } from "./booking.constant";
-
+import httpStatus from "http-status";
+import ApiError from "../../error/ApiError";
+import { uuidv4 } from "zod";
+import { stripe } from "../../helper/stripe";
 const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Date) => {
     if (user.role !== UserRole.TOURIST) {
-        throw new Error("Only TOURIST can create bookings");
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Only TOURIST can create bookings");
     }
 
-    const tour = await prisma.tour.findUniqueOrThrow({ where: { id: tourId } });
+    const tour = await prisma.tour.findUniqueOrThrow({ 
+        where: { id: tourId },
+        include: { guide: true } 
+    });
 
     const availability = await prisma.availability.findFirst({
         where: {
@@ -22,24 +28,74 @@ const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Dat
     })
 
     if (!availability) {
-        throw new Error("No available slot for the selected date");
+        throw new ApiError(httpStatus.BAD_REQUEST, "No available slot for the selected date");
     }
 
-    const booking = await prisma.booking.create({
-        data: {
-            tourId,
-            userId: user.id,
-            bookingDate,
-            totalFee: tour.tourFee,
-            availabilityId: availability.id
-        }
-    })
-    await prisma.availability.update({
-        where: { id: availability.id },
-        data: { isBooked: true }
-    });
 
-    return booking
+    const today = new Date();
+
+        const transactionId = "HealthCare-" + today.getFullYear() + "-" + today.getMonth() + "-" + today.getDay() + "-" + today.getHours() + "-" + today.getMinutes();
+
+
+    const result = await prisma.$transaction(async (tnx) => {
+        const booking = await tnx.booking.create({
+            data: { 
+                 tourId,
+                 userId: user.id,
+                 bookingDate,
+                 totalFee: tour.tourFee,
+                 availabilityId: availability.id
+            },
+            include: {
+                tour: true,
+                user: true
+            }
+        })
+        await tnx.availability.update({
+            where: {
+                id: availability.id
+            },
+            data: {
+                isBooked: true,
+
+            }
+        })
+     
+        await tnx.payment.create({
+            data: {
+                bookingId: booking.id,
+                amount: tour.tourFee,
+                transactionId: transactionId,
+            }
+        })
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ["card"],
+            mode: "payment",
+            customer_email: user.email,
+            line_items: [
+                {
+                    price_data: {
+                        currency: "bdt",
+                        product_data: {
+                            name: `Booking with guide: ${tour.guide.name} for tour: ${tour.title}`,
+                        },
+                        unit_amount: tour.tourFee * 100,
+                    },
+                    quantity: 1,
+                },
+            ],
+            metadata: {
+                bookingId: booking.id,
+                paymentId: transactionId
+            },
+            success_url: `https://www.programming-hero.com`,
+            cancel_url: `https://next.programming-hero.com`,
+        });
+        console.log("session", session)
+        return { booking, paymentUrl: session.url };
+     })
+
+    return result;
 }
 const getAllFromDB = async (params: any, options: IOptions) => {
 
@@ -119,14 +175,14 @@ const getSingleByIdFromDB = async (user: IJWTPayload, bookingId: string) => {
     })
 
     if (!booking) {
-        throw new Error("Booking not found");
+        throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
     }
 
     if (user.role === UserRole.TOURIST && booking.userId !== user.id) {
-        throw new Error("You are not authorized to view this booking");
+        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized to view this booking");
     }
     if (user.role === UserRole.GUIDE && booking.tour.guideId !== user.id) {
-        throw new Error("You are not authorized to view this booking");
+        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized to view this booking");
     }
 
     return booking
@@ -134,7 +190,7 @@ const getSingleByIdFromDB = async (user: IJWTPayload, bookingId: string) => {
 
 const getMyBooking = async (user: IJWTPayload) => {
     if (user.role !== UserRole.TOURIST && user.role !== UserRole.GUIDE) {
-        throw new Error("Only Tourist can view their bookings");
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Only Tourist can view their bookings");
     }
     if (user.role === UserRole.GUIDE) {
         return prisma.booking.findMany({
@@ -168,7 +224,7 @@ const updateIntoDB = async (user: IJWTPayload, bookingId: string, payload: any) 
     })
 
     if (user.role === UserRole.TOURIST && existingBooking.userId !== user.id) {
-        throw new Error("You are not authorized to update this booking");
+        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized to update this booking");
     }
     // date chane or cancel booking logic
     const allowedFieldsForUser = ["bookingDate", "status"];
@@ -182,12 +238,12 @@ const updateIntoDB = async (user: IJWTPayload, bookingId: string, payload: any) 
         });
 
         if (payload.status && !allowedStatusForUser.includes(payload.status)) {
-            throw new Error("Invalid status for user");
+            throw new ApiError(httpStatus.BAD_REQUEST, "Invalid status for user");
         }
     }
 
     if (Object.keys(payload).length === 0) {
-        throw new Error("No valid fields to update");
+        throw new ApiError(httpStatus.BAD_REQUEST, "No valid fields to update");
     }
 
     const updatedBooking = await prisma.booking.update({

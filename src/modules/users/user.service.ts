@@ -6,24 +6,25 @@ import { IJWTPayload, UserWithProfile } from "../../types/common";
 import { fileUploader } from "../../helper/fileUploader";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { userSearchableFields } from "./user.constant";
-
+import httpStatus from "http-status";
+import ApiError from "../../error/ApiError";
 const createUser = async (req: Request): Promise<UserWithProfile> => {
     const { role, profile, email, password } = req.body;
     const exists = await prisma.user.findUnique({ where: { email } })
     if (exists?.role === UserRole.TOURIST) {
-        throw new Error("User already exists")
+        throw new ApiError(httpStatus.BAD_REQUEST,"User already exists")
     }
     if (exists?.role === UserRole.GUIDE) {
-        throw new Error("Guide already exists")
+        throw new ApiError(httpStatus.BAD_REQUEST,"Guide already exists")
     }
 
     if (role === UserRole.GUIDE && !profile) {
-        throw new Error("Guide profile data is required")
+        throw new ApiError(httpStatus.BAD_REQUEST,"Guide profile data is required")
     }
 
     if (role === UserRole.GUIDE) {
         if (!profile.languages || !profile.experienceYears || !profile.feePerHour) {
-            throw new Error("Missing guide profile fields.")
+            throw new ApiError(httpStatus.BAD_REQUEST,"Missing guide profile fields.")
         }
     }
 
@@ -84,7 +85,7 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
     // guide profile
     if (role === UserRole.GUIDE) {
         if (!profile) {
-            throw new Error("Guide profile data is required")
+            throw new ApiError(httpStatus.BAD_REQUEST,"Guide profile data is required")
         }
         await prisma.profile.create({
             data: {
@@ -114,17 +115,10 @@ const createAdmin = async (req: Request): Promise<UserWithProfile> => {
     const { email, password, name, phone, address } = req.body;
     const exists = await prisma.user.findUnique({ where: { email } })
     if (exists) {
-        throw new Error("Admin already exists")
-    }
-
-    // if (role === UserRole.ADMIN) {
-    //     throw new Error("Admin cannot be created from this route.")
-    // }
-
-    
+        throw new ApiError(httpStatus.BAD_REQUEST,"Admin already exists")
+    }  
 
     const hasshedPassword = await bcrypt.hash(req.body.password, 10);
-
 
     let admin = await prisma.user.create({
         data: {

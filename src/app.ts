@@ -5,10 +5,15 @@ import notFound from './middlewares/notFound';
 import config from './config';
 import router from './routes';
 import cookieParser from 'cookie-parser';
+import { PaymentController } from './modules/payments/payment.controller';
 
 const app: Application = express();
 
-
+app.post(
+    "/webhook",
+    express.raw({ type: "application/json" }),
+    PaymentController.handleStripeWebhookEvent
+);
 
 
 app.use(cors({

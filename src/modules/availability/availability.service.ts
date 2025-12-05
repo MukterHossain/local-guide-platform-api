@@ -3,13 +3,14 @@ import { IJWTPayload } from "../../types/common";
 import { prisma } from "../../shared/prisma";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { availabilitySearchableFields } from "./availability.constant";
-
+import httpStatus from "http-status";
+import ApiError from "../../error/ApiError";
 const inserIntoDB = async (user:IJWTPayload, startAt: Date, endAt: Date)=>{
     if(user.role !== UserRole.GUIDE) {
-        throw new Error("Only Guide can create availability");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Guide can create availability");
     }
  if(startAt >= endAt){
-    throw new Error("End time must be after start time");
+    throw new ApiError(httpStatus.BAD_REQUEST,"End time must be after start time");
  }
     const isExist = await prisma.availability.findFirst({
         where:{
@@ -18,7 +19,7 @@ const inserIntoDB = async (user:IJWTPayload, startAt: Date, endAt: Date)=>{
         }
     })
     if(isExist){
-        throw new Error("Availability already exists.");
+        throw new ApiError(httpStatus.BAD_REQUEST,"Availability already exists.");
     }
     const availability = await prisma.availability.create({
         data: {
@@ -87,7 +88,7 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
 }
 const getSingleByIdFromDB = async (user:IJWTPayload, availabilityId:string)=>{
     if(user.role !== UserRole.GUIDE && user.role !== UserRole.ADMIN){
-        throw new Error("Only Guide or Admin is allowed to access availability details");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Guide or Admin is allowed to access availability details");
     }
     const availability = await prisma.availability.findUniqueOrThrow({
         where:{id: availabilityId},
@@ -98,7 +99,7 @@ const getSingleByIdFromDB = async (user:IJWTPayload, availabilityId:string)=>{
     })
 
     if(!availability){
-        throw new Error("Availability not found");
+        throw new ApiError(httpStatus.NOT_FOUND,"Availability not found");
     }
      
     return availability
@@ -110,7 +111,7 @@ const updateIntoDB = async (user:IJWTPayload, availabilityId:string, startAt: Da
     const avail = await prisma.availability.findUniqueOrThrow({ where: { id: availabilityId } });
     
     if(user.role !== UserRole.GUIDE || avail.guideId !== user.id){
-        throw new Error("Only the guide can update availability");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only the guide can update availability");
     }
     
     
@@ -121,7 +122,7 @@ const updateIntoDB = async (user:IJWTPayload, availabilityId:string, startAt: Da
     )
 
     if(Object.keys(filteredData).length === 0){
-        throw new Error("No valid fields to update");
+        throw new ApiError(httpStatus.BAD_REQUEST,"No valid fields to update");
     }
 
     const updateData = await prisma.availability.update({

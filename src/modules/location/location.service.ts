@@ -3,10 +3,11 @@ import { IJWTPayload } from "../../types/common";
 import { prisma } from "../../shared/prisma";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { locationSearchableFields } from "./location.constant";
-
+import httpStatus from "http-status";
+import ApiError from "../../error/ApiError";
 const inserIntoDB = async (user:IJWTPayload, city: string, country: string)=>{
     if(user.role !== UserRole.ADMIN) {
-        throw new Error("Only Admin can create location");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Admin can create location");
     }
 
     const isExist = await prisma.location.findFirst({
@@ -16,7 +17,7 @@ const inserIntoDB = async (user:IJWTPayload, city: string, country: string)=>{
         }
     })
     if(isExist){
-        throw new Error("Location already exists.");
+        throw new ApiError(httpStatus.BAD_REQUEST,"Location already exists.");
     }
     const location = await prisma.location.create({
         data: {
@@ -87,7 +88,7 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
 }
 const getSingleByIdFromDB = async (user:IJWTPayload, locationId:string)=>{
     if(user.role !== UserRole.GUIDE && user.role !== UserRole.ADMIN){
-        throw new Error("Only Guide or Admin is allowed to access location details");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Guide or Admin is allowed to access location details");
     }
     const location = await prisma.location.findUniqueOrThrow({
         where:{id: locationId},
@@ -99,7 +100,7 @@ const getSingleByIdFromDB = async (user:IJWTPayload, locationId:string)=>{
     })
 
     if(!location){
-        throw new Error("Location not found");
+        throw new ApiError(httpStatus.NOT_FOUND,"Location not found");
     }
      
     return location
@@ -111,11 +112,11 @@ const updateIntoDB = async (user:IJWTPayload, locationId:string, city:string, co
     const exists = await prisma.location.findUniqueOrThrow({ where: { id: locationId } });
     
     if(user.role !== UserRole.ADMIN ){
-        throw new Error("Only the Admin can update location");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only the Admin can update location");
     }
 
     if(!exists){
-        throw new Error("Location not found")
+        throw new ApiError(httpStatus.NOT_FOUND,"Location not found")
     }
     
     
@@ -126,7 +127,7 @@ const updateIntoDB = async (user:IJWTPayload, locationId:string, city:string, co
     )
 
     if(Object.keys(filteredData).length === 0){
-        throw new Error("No valid fields to update");
+        throw new ApiError(httpStatus.BAD_REQUEST,"No valid fields to update");
     }
 
     const updateData = await prisma.location.update({

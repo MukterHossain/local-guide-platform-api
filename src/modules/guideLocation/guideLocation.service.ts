@@ -3,10 +3,11 @@ import { IJWTPayload } from "../../types/common";
 import { prisma } from "../../shared/prisma";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { locationSearchableFields } from "../location/location.constant";
-
+import httpStatus from "http-status";
+import ApiError from "../../error/ApiError";
 const inserIntoDB = async (user:IJWTPayload,guideId: string, locationId: string )=>{
     if(user.role !== UserRole.GUIDE) {
-        throw new Error("Only Guide can create location");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Guide can create location");
     }
 
     const isExist = await prisma.guideLocation.findFirst({
@@ -16,7 +17,7 @@ const inserIntoDB = async (user:IJWTPayload,guideId: string, locationId: string 
         }
     })
     if(isExist){
-        throw new Error("Guide Location already exists.");
+        throw new ApiError(httpStatus.BAD_REQUEST,"Guide Location already exists.");
     }
     const createData = await prisma.guideLocation.create({
         data: {
@@ -94,7 +95,7 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
 }
 const getSingleByIdFromDB = async (user:IJWTPayload, guideLocationId:string)=>{
     if(user.role !== UserRole.GUIDE){
-        throw new Error("Only Guide  is allowed to access guideLocation details");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Guide  is allowed to access guideLocation details");
     }
     const getData = await prisma.guideLocation.findUniqueOrThrow({
         where:{id: guideLocationId},
@@ -106,7 +107,7 @@ const getSingleByIdFromDB = async (user:IJWTPayload, guideLocationId:string)=>{
     })
 
     if(!getData){
-        throw new Error("GuideLocation not found");
+        throw new ApiError(httpStatus.NOT_FOUND,"GuideLocation not found");
     }
      
     return getData

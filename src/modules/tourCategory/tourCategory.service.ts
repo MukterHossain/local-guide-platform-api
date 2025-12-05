@@ -3,11 +3,12 @@ import { Prisma } from "@prisma/client";
 import { IJWTPayload } from "../../types/common";
 import { prisma } from "../../shared/prisma";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
-
+import httpStatus from "http-status";
+import ApiError from "../../error/ApiError";
 
 const inserIntoDB = async (user:IJWTPayload, tourId:string, categoryId:string)=>{
     if(user.role !== "ADMIN") {
-        throw new Error("Only Admin can create tour categories");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Admin can create tour categories");
     }
 
     const isExist = await prisma.tourCategory.findFirst({
@@ -17,7 +18,7 @@ const inserIntoDB = async (user:IJWTPayload, tourId:string, categoryId:string)=>
         }
     })
     if(isExist){
-        throw new Error("Tour Category already exists.");
+        throw new ApiError(httpStatus.BAD_REQUEST,"Tour Category already exists.");
     }
     const tourCategory = await prisma.tourCategory.create({
         data: {

@@ -5,10 +5,11 @@ import { prisma } from "../../shared/prisma";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { categorySearchableFields } from "./category.constant";
 // import { tourSearchableFields } from "./tour.constant";
-
+import httpStatus from "http-status";
+import ApiError from "../../error/ApiError";
 const inserIntoDB = async (user:IJWTPayload, name: any)=>{
     if(user.role !== "ADMIN") {
-        throw new Error("Only Admin can create categories");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Admin can create categories");
     }
 
     const isExist = await prisma.category.findFirst({
@@ -17,7 +18,7 @@ const inserIntoDB = async (user:IJWTPayload, name: any)=>{
         }
     })
     if(isExist){
-        throw new Error("Category already exists.");
+        throw new ApiError(httpStatus.BAD_REQUEST,"Category already exists.");
     }
     const category = await prisma.category.create({
         data: {
@@ -96,7 +97,7 @@ const getSingleByIdFromDB = async (user:IJWTPayload, categoryId:string)=>{
     })
 
     if(!category){
-        throw new Error("Category not found");
+        throw new ApiError(httpStatus.NOT_FOUND,"Category not found");
     }
      
     return category
@@ -107,14 +108,14 @@ const getSingleByIdFromDB = async (user:IJWTPayload, categoryId:string)=>{
 const updateIntoDB = async (user:IJWTPayload, categoryId:string, payload:any)=>{
     
     if(user.role !== UserRole.ADMIN ){
-        throw new Error("Only Admin is allowed to update category");
+        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Admin is allowed to update category");
     }
     const existingBooking = await prisma.category.findUniqueOrThrow({
         where:{id: categoryId}
     })
 
    if(!existingBooking){
-    throw new Error("Category not found");
+    throw new ApiError(httpStatus.NOT_FOUND,"Category not found");
    }
     
     const allowedFields = ["name"];
@@ -124,7 +125,7 @@ const updateIntoDB = async (user:IJWTPayload, categoryId:string, payload:any)=>{
     )
 
     if(Object.keys(filteredData).length === 0){
-        throw new Error("No valid fields to update");
+        throw new ApiError(httpStatus.BAD_REQUEST,"No valid fields to update");
     }
 
     const updatedCategory = await prisma.category.update({
