@@ -22,6 +22,9 @@ router.post("/",
 router.patch("/:bookingId",
     auth(UserRole.TOURIST, UserRole.ADMIN), BookingController.updateIntoDB
 )
+router.patch("/status/:bookingId",
+    auth(UserRole.TOURIST, UserRole.ADMIN, UserRole.GUIDE), BookingController.updateBookingStatus
+)
 router.delete("/:bookingId",
     auth(UserRole.TOURIST, UserRole.ADMIN), BookingController.deleteFromDB
 )

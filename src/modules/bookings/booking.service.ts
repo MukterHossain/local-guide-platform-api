@@ -1,4 +1,4 @@
-import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
+import { BookingStatus, Prisma, User, UserRole, UserStatus } from "@prisma/client";
 import { Request } from "express";
 import { IJWTPayload } from "../../types/common";
 import { prisma } from "../../shared/prisma";
@@ -13,9 +13,9 @@ const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Dat
         throw new ApiError(httpStatus.UNAUTHORIZED, "Only TOURIST can create bookings");
     }
 
-    const tour = await prisma.tour.findUniqueOrThrow({ 
+    const tour = await prisma.tour.findUniqueOrThrow({
         where: { id: tourId },
-        include: { guide: true } 
+        include: { guide: true }
     });
 
     const availability = await prisma.availability.findFirst({
@@ -34,17 +34,17 @@ const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Dat
 
     const today = new Date();
 
-        const transactionId = "HealthCare-" + today.getFullYear() + "-" + today.getMonth() + "-" + today.getDay() + "-" + today.getHours() + "-" + today.getMinutes();
+    const transactionId = "HealthCare-" + today.getFullYear() + "-" + today.getMonth() + "-" + today.getDay() + "-" + today.getHours() + "-" + today.getMinutes();
 
 
     const result = await prisma.$transaction(async (tnx) => {
         const booking = await tnx.booking.create({
-            data: { 
-                 tourId,
-                 userId: user.id,
-                 bookingDate,
-                 totalFee: tour.tourFee,
-                 availabilityId: availability.id
+            data: {
+                tourId,
+                userId: user.id,
+                bookingDate,
+                totalFee: tour.tourFee,
+                availabilityId: availability.id
             },
             include: {
                 tour: true,
@@ -60,7 +60,7 @@ const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Dat
 
             }
         })
-     
+
         await tnx.payment.create({
             data: {
                 bookingId: booking.id,
@@ -93,7 +93,7 @@ const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Dat
         });
         console.log("session", session)
         return { booking, paymentUrl: session.url };
-     })
+    })
 
     return result;
 }
@@ -216,6 +216,46 @@ const getMyBooking = async (user: IJWTPayload) => {
     return bookings
 }
 
+const updateBookingStatus = async (user: IJWTPayload, bookingId: string, status: BookingStatus) => {
+
+    const booking = await prisma.booking.findUniqueOrThrow({
+        where: { id: bookingId },
+        include: { tour: true }
+    })
+
+    if (user.role === UserRole.TOURIST) {
+        if (booking.userId !== user.id) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, "Not your booking");
+        }
+
+        if (status !== "CANCELLED") {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Tourist can only cancel");
+        }
+    }
+
+    if (user.role === UserRole.GUIDE) {
+        if (booking.tour.guideId !== user.id) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, "Cannot update other's bookings");
+        }
+        const allowedStatusForUser = ["CONFIRMED", "COMPLETED", "CANCELLED"];
+        if (!allowedStatusForUser.includes(status)) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Invalid status");
+        }
+    }
+
+    const updatedBooking = await prisma.booking.update({
+        where: { id: bookingId },
+        data: { status },
+        include: {
+            tour: true,
+            user: true
+        }
+    })
+
+
+    return updatedBooking
+
+}
 const updateIntoDB = async (user: IJWTPayload, bookingId: string, payload: any) => {
 
     const existingBooking = await prisma.booking.findUniqueOrThrow({
@@ -281,5 +321,6 @@ export const BookingService = {
     getSingleByIdFromDB,
     getMyBooking,
     updateIntoDB,
+    updateBookingStatus,
     deleteFromDB
 }

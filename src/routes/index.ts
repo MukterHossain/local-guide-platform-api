@@ -8,6 +8,7 @@ import { AvailabilityRoutes } from '../modules/availability/availability.routes'
 import { LocationRoutes } from '../modules/location/location.routes';
 import { GuideLocationRoutes } from '../modules/guideLocation/guideLocation.routes';
 import { TourListRoutes } from '../modules/tourList/tour.routes';
+import { ReviewRoutes } from '../modules/review/review.routes';
 
 
 const router = express.Router();
@@ -48,6 +49,10 @@ const moduleRoutes = [
     {
         path: '/guideLocation',
         route: GuideLocationRoutes
+    },
+    {
+        path: '/review',
+        route: ReviewRoutes
     },
 ];
 

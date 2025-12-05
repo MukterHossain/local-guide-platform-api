@@ -73,6 +73,20 @@ const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, re
         data: result
     })
 })
+const updateBookingStatus = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
+  const user = req.user  
+  const bookingId = req.params.bookingId;
+  const {status} = req.body;
+    const result = await BookingService.updateBookingStatus(user as IJWTPayload , bookingId, status);
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Booking updated successfully",
+        data: result
+    })
+})
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
   const bookingId = req.params.bookingId;
     const result = await BookingService.deleteFromDB(bookingId);
@@ -100,5 +114,6 @@ export const BookingController = {
     getSingleByIdFromDB,
     getMyBooking,
     updateIntoDB,
+    updateBookingStatus,
     deleteFromDB
 }
