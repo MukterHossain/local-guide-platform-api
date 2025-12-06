@@ -10,6 +10,7 @@ import { GuideLocationRoutes } from '../modules/guideLocation/guideLocation.rout
 import { TourListRoutes } from '../modules/tourList/tour.routes';
 import { ReviewRoutes } from '../modules/review/review.routes';
 import { ReportRoutes } from '../modules/report/report.routes';
+import { WishlistRoutes } from '../modules/wishlist/wishlist.routes';
 
 
 const router = express.Router();
@@ -58,6 +59,10 @@ const moduleRoutes = [
     {
         path: '/report',
         route: ReportRoutes
+    },
+    {
+        path: '/wishlist',
+        route: WishlistRoutes
     },
 ];
 
