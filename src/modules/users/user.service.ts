@@ -12,19 +12,19 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
     const { role, profile, email, password } = req.body;
     const exists = await prisma.user.findUnique({ where: { email } })
     if (exists?.role === UserRole.TOURIST) {
-        throw new ApiError(httpStatus.BAD_REQUEST,"User already exists")
+        throw new ApiError(httpStatus.BAD_REQUEST, "User already exists")
     }
     if (exists?.role === UserRole.GUIDE) {
-        throw new ApiError(httpStatus.BAD_REQUEST,"Guide already exists")
+        throw new ApiError(httpStatus.BAD_REQUEST, "Guide already exists")
     }
 
     if (role === UserRole.GUIDE && !profile) {
-        throw new ApiError(httpStatus.BAD_REQUEST,"Guide profile data is required")
+        throw new ApiError(httpStatus.BAD_REQUEST, "Guide profile data is required")
     }
 
     if (role === UserRole.GUIDE) {
         if (!profile.languages || !profile.experienceYears || !profile.feePerHour) {
-            throw new ApiError(httpStatus.BAD_REQUEST,"Missing guide profile fields.")
+            throw new ApiError(httpStatus.BAD_REQUEST, "Missing guide profile fields.")
         }
     }
 
@@ -85,7 +85,7 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
     // guide profile
     if (role === UserRole.GUIDE) {
         if (!profile) {
-            throw new ApiError(httpStatus.BAD_REQUEST,"Guide profile data is required")
+            throw new ApiError(httpStatus.BAD_REQUEST, "Guide profile data is required")
         }
         await prisma.profile.create({
             data: {
@@ -115,8 +115,8 @@ const createAdmin = async (req: Request): Promise<UserWithProfile> => {
     const { email, password, name, phone, address } = req.body;
     const exists = await prisma.user.findUnique({ where: { email } })
     if (exists) {
-        throw new ApiError(httpStatus.BAD_REQUEST,"Admin already exists")
-    }  
+        throw new ApiError(httpStatus.BAD_REQUEST, "Admin already exists")
+    }
 
     const hasshedPassword = await bcrypt.hash(req.body.password, 10);
 
@@ -164,7 +164,7 @@ const createAdmin = async (req: Request): Promise<UserWithProfile> => {
         })
     }
 
-    
+
 
 
     return admin as UserWithProfile
@@ -271,17 +271,24 @@ const getMyProfile = async (user: IJWTPayload) => {
                 id: true,
                 email: true,
                 name: true,
-                phone: true,                
+                phone: true,
                 role: true,
-                address: true,                
+                address: true,
                 image: true,
                 needPasswordChange: true,
                 status: true,
-                isDeleted: true,                
+                isDeleted: true,
                 ratingAvg: true,
                 createdAt: true,
                 updatedAt: true,
-                profile: true
+                profile: {
+                    select: {
+                        bio: true,
+                        languages: true,
+                        experienceYears: true,
+                        availableStatus: true,
+                    }
+                }
             }
         })
     }
@@ -304,11 +311,18 @@ const getMyProfile = async (user: IJWTPayload) => {
                 ratingAvg: true,
                 createdAt: true,
                 updatedAt: true,
-                profile: true
+                profile: {
+                    select: {
+                        bio: true,
+                        languages: true,
+                        experienceYears: true,
+                        feePerHour: true,
+                        availableStatus: true,
+                        verificationStatus: true,
+                        adminNote: true
+                    }
+                }
             }
-            // include: {
-            //     profile: true
-            // }
         })
     }
     if (userInfo.role === UserRole.ADMIN) {
@@ -320,13 +334,13 @@ const getMyProfile = async (user: IJWTPayload) => {
                 id: true,
                 email: true,
                 name: true,
-                phone: true,                
+                phone: true,
                 role: true,
-                address: true,                
+                address: true,
                 image: true,
                 needPasswordChange: true,
                 status: true,
-                isDeleted: true,                
+                isDeleted: true,
                 ratingAvg: true,
                 createdAt: true,
                 updatedAt: true
@@ -338,8 +352,72 @@ const getMyProfile = async (user: IJWTPayload) => {
         ...profileData
     }
 }
+const updateMyProfie = async (user: IJWTPayload, req: Request) => {
+    const currentUserInfo = await prisma.user.findUniqueOrThrow({
+        where: {
+            email: user?.email
+        }
+    });
+
+    let imageUrl = currentUserInfo.image;
+    if (req.file) {
+        const upload = await fileUploader.uploadToCloudinary(req.file);
+            imageUrl = typeof upload === "string" ? upload : Array.isArray(upload) ? upload[0] : imageUrl;
+    
+    }
+
+    const body = req.body;
+    if(currentUserInfo.role === UserRole.TOURIST || currentUserInfo.role === UserRole.ADMIN){
+        const updated = await prisma.user.update({
+            where: {id: currentUserInfo.id},
+            data: {
+                ...body, image: imageUrl
+            }
+
+        })
+        return updated;
+    }
+    // Guide
+    if(currentUserInfo.role === UserRole.GUIDE){
+        const { profile, ...userData } = body;
+        const updated= await prisma.user.update({
+            where: {id: currentUserInfo.id},
+            data: {
+                ...userData, image: imageUrl,
+                profile: {
+                    update: {
+                        ...profile
+                    }
+                }
+            }
+        })
+        return updated;
+    }
+    throw new ApiError(httpStatus.BAD_REQUEST, "Unable to update profile")
+}
 
 
+const changeUserStatus = async (id: string, payload: { status: UserStatus }) => {
+    const userData = await prisma.user.findUniqueOrThrow({
+        where: {
+            id
+        }
+    })
+
+    if (userData.role === UserRole.ADMIN) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Only admin can update user status")
+    }
+
+
+    const updateUserStatus = await prisma.user.update({
+        where: {
+            id
+        },
+        data: payload
+    })
+
+    return updateUserStatus;
+};
 
 
 
@@ -349,5 +427,7 @@ export const UserService = {
     createUser,
     createAdmin,
     getAllFromDB,
-    getMyProfile
+    getMyProfile,
+    updateMyProfie,
+    changeUserStatus
 }

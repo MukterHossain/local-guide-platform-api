@@ -39,18 +39,43 @@ const createAdminValidation = z.object({
   role: z.enum(["ADMIN"]), 
 });
 
+const updateTouristAdnAdminSchema = z.object({
+  name: z.string().optional(),
+  phone: z.string().optional(),
+  image: z.string().optional(),
+  address: z.string().optional(),
+});
+
+const updateGuideProfileSchema = z.object({
+   name: z.string().optional(),
+    phone: z.string().optional(),
+    image: z.string().optional(),
+    address: z.string().optional(),
+
+  profile: z.object({
+    bio: z.string().optional(),
+    languages: z.array(z.string()).optional(),
+    experienceYears: z.number().optional(),
+    locationId: z.string().optional(),
+    availableStatus: z.boolean().optional(),
+    feePerHour: z.number().optional(),
+  }).optional()
+});
 
 
 
-const updateStatus = z.object({
-    body: z.object({
-        status: z.enum([UserStatus.ACTIVE, UserStatus.BLOCKED, UserStatus.DELETED, UserStatus.PENDING]).optional(),
-    }),
+
+const adminUpdateGuideStatus = z.object({
+  verificationStatus: z.enum(["PENDING", "VERIFIED", "REJECTED"]).optional(),
+  adminNote: z.string().optional(),
+  status: z.enum(["ACTIVE", "PENDING", "BLOCKED", "DELETED"]).optional()
 });
 
 export const userValidation = {
     profileValidation,
     createUserValidation,
     createAdminValidation,
-    updateStatus
+    updateTouristAdnAdminSchema,
+    updateGuideProfileSchema,
+    adminUpdateGuideStatus
 };
