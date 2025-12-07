@@ -6,6 +6,8 @@ import config from './config';
 import router from './routes';
 import cookieParser from 'cookie-parser';
 import { PaymentController } from './modules/payments/payment.controller';
+import cron from 'node-cron';
+import { BookingService } from './modules/bookings/booking.service';
 
 const app: Application = express();
 
@@ -27,7 +29,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 
 
-
+cron.schedule('* * * * *', () => {
+    try {
+        console.log("Node cron called at ", new Date())
+        BookingService.cancelUnpaidBookings();
+    } catch (err) {
+        console.error(err);
+    }
+});
 
 app.use("/api", router)
 

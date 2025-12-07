@@ -280,15 +280,7 @@ const getMyProfile = async (user: IJWTPayload) => {
                 isDeleted: true,
                 ratingAvg: true,
                 createdAt: true,
-                updatedAt: true,
-                profile: {
-                    select: {
-                        bio: true,
-                        languages: true,
-                        experienceYears: true,
-                        availableStatus: true,
-                    }
-                }
+                updatedAt: true
             }
         })
     }

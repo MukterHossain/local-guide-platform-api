@@ -1,4 +1,4 @@
-import { BookingStatus, Prisma, User, UserRole, UserStatus } from "@prisma/client";
+import { BookingStatus, PaymentStatus, Prisma, User, UserRole, UserStatus } from "@prisma/client";
 import { Request } from "express";
 import { IJWTPayload } from "../../types/common";
 import { prisma } from "../../shared/prisma";
@@ -308,7 +308,50 @@ const deleteFromDB = async (bookingId: string) => {
 
 
 
+const cancelUnpaidBookings = async () => {
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
 
+    const unPaidBookings = await prisma.booking.findMany({
+        where: {
+            createdAt: {
+                lte: thirtyMinAgo
+            },
+            paymentStatus: PaymentStatus.UNPAID
+        }
+    })
+
+    const bookingIdsToCancel = unPaidBookings.map(booking => booking.id);
+
+    await prisma.$transaction(async (tnx) => {
+        await tnx.payment.deleteMany({
+            where: {
+                bookingId: {
+                    in: bookingIdsToCancel
+                }
+            }
+        })
+
+        await tnx.booking.deleteMany({
+            where: {
+                id: {
+                    in: bookingIdsToCancel
+                }
+            }
+        })
+
+        for (const unPaidBooking of unPaidBookings) {
+            await tnx.availability.update({
+                where: {
+                        id: unPaidBooking.availabilityId,
+                        
+                },
+                data: {
+                    isBooked: false
+                }
+            })
+        }
+    })
+}
 
 
 
@@ -322,5 +365,6 @@ export const BookingService = {
     getMyBooking,
     updateIntoDB,
     updateBookingStatus,
-    deleteFromDB
+    deleteFromDB,
+    cancelUnpaidBookings
 }

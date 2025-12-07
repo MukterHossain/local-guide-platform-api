@@ -123,11 +123,38 @@ REFRESH_TOKEN_EXPIRES_IN=1y
     });
 });
 
+const changePassword = catchAsync(
+    async (req: Request & { user?: any }, res: Response) => {
+        const user = req.user;
 
+        const result = await AuthService.changePassword(user, req.body);
+
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "Password Changed successfully",
+            data: result,
+        });
+    }
+);
+const getMe = catchAsync(
+    async (req: Request & { user?: any }, res: Response) => {
+        const user = req.cookies;
+    const result = await AuthService.getMe(user);
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "User retrive successfully!",
+            data: result,
+        });
+    }
+);
 
 
 
 export const AuthController = {
     login,
-    refreshToken
+    refreshToken,
+    changePassword,
+    getMe
 }

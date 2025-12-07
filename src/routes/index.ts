@@ -11,6 +11,7 @@ import { TourListRoutes } from '../modules/tourList/tour.routes';
 import { ReviewRoutes } from '../modules/review/review.routes';
 import { ReportRoutes } from '../modules/report/report.routes';
 import { WishlistRoutes } from '../modules/wishlist/wishlist.routes';
+import { MetaRoutes } from '../modules/meta/meta.routes';
 
 
 const router = express.Router();
@@ -63,6 +64,10 @@ const moduleRoutes = [
     {
         path: '/wishlist',
         route: WishlistRoutes
+    },
+    {
+        path: '/meta',
+        route: MetaRoutes
     },
 ];
 
