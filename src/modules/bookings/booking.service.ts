@@ -61,7 +61,7 @@ const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Dat
             }
         })
 
-        await tnx.payment.create({
+        const paymentData= await tnx.payment.create({
             data: {
                 bookingId: booking.id,
                 amount: tour.tourFee,
@@ -86,7 +86,8 @@ const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Dat
             ],
             metadata: {
                 bookingId: booking.id,
-                paymentId: transactionId
+                paymentId: paymentData.id
+                // paymentId: transactionId
             },
             success_url: `https://www.programming-hero.com`,
             cancel_url: `https://next.programming-hero.com`,

@@ -18,11 +18,29 @@ router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), UserCont
 
 router.post(
     "/register",
-    fileUploader.upload.single("file"), // single image
+    fileUploader.upload.single("file"),
     (req: Request, res: Response, next: NextFunction) => {
-        req.body = userValidation.createUserValidation.parse(JSON.parse(req.body.data));
-        return UserController.createUser(req, res, next);
+        try {
+            console.log("REQ.BODY:", req.body);
+            console.log("REQ.FILE:", req.file);
+
+            if (!req.body?.data) {
+                throw new Error("No JSON data found in 'data' field");
+            }
+
+            const parsed = JSON.parse(req.body.data);
+            req.body = userValidation.createUserValidation.parse(parsed);
+
+            return UserController.createUser(req, res, next);
+        } catch (error) {
+            next(error);
+        }
     }
+    // fileUploader.upload.single("file"), // single image
+    // (req: Request, res: Response, next: NextFunction) => {
+    //     req.body = userValidation.createUserValidation.parse(JSON.parse(req.body.data));
+    //     return UserController.createUser(req, res, next);
+    // }
 );
 router.post("/admin",
     fileUploader.upload.single('file'),

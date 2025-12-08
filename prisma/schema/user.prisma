@@ -8,7 +8,6 @@ model User {
     address            String?
     needPasswordChange Boolean    @default(true)
     role               UserRole   @default(TOURIST)
-    ratingAvg          Float?     @default(0)
     isDeleted          Boolean    @default(false)
     status             UserStatus @default(ACTIVE)
     createdAt          DateTime   @default(now())
@@ -35,6 +34,7 @@ model Profile {
     languages          String[] // ["English","Bangla"]
     experienceYears    Int?
     locationId         String?
+    avgRating          Float?     @default(0)
     location           Location?               @relation(fields: [locationId], references: [id])
     feePerHour       Float?
     availableStatus    Boolean                 @default(true)

@@ -52,7 +52,6 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
             needPasswordChange: true,
             status: true,
             isDeleted: true,
-            ratingAvg: true,
             createdAt: true,
             updatedAt: true
         }
@@ -75,13 +74,12 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
                 needPasswordChange: true,
                 status: true,
                 isDeleted: true,
-                ratingAvg: true,
                 createdAt: true,
                 updatedAt: true
             }
         })
     }
-
+ let finalUser: UserWithProfile = { ...user };
     // guide profile
     if (role === UserRole.GUIDE) {
         if (!profile) {
@@ -91,14 +89,16 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
             data: {
                 userId: user.id,
                 bio: profile.bio,
+                avgRating: profile.avgRating,
                 languages: profile.languages || [],
                 experienceYears: profile.experienceYears,
                 feePerHour: profile.feePerHour,
-                locationId: profile.locationId,
+                locationId: profile.locationId ?? null,
             }
         })
     }
 
+   
     if (role === UserRole.GUIDE) {
         const guideProfile = await prisma.profile.findUnique({
             where: {
@@ -106,10 +106,10 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
             }
         })
         console.log("user", user)
-        return { ...user, profile: guideProfile } as UserWithProfile
+         finalUser.profile = guideProfile;
     }
 
-    return user as UserWithProfile
+    return finalUser
 }
 const createAdmin = async (req: Request): Promise<UserWithProfile> => {
     const { email, password, name, phone, address } = req.body;
@@ -135,7 +135,6 @@ const createAdmin = async (req: Request): Promise<UserWithProfile> => {
             needPasswordChange: true,
             status: true,
             isDeleted: true,
-            ratingAvg: true,
             createdAt: true,
             updatedAt: true
         }
@@ -157,7 +156,6 @@ const createAdmin = async (req: Request): Promise<UserWithProfile> => {
                 needPasswordChange: true,
                 status: true,
                 isDeleted: true,
-                ratingAvg: true,
                 createdAt: true,
                 updatedAt: true
             }
@@ -226,14 +224,11 @@ const getAllFromDB = async (params: any, options: IOptions) => {
             needPasswordChange: true,
             status: true,
             isDeleted: true,
-            ratingAvg: true,
+            avgRating: true,
             createdAt: true,
             updatedAt: true,
             profile: true
         }
-        // include: {
-        //     profile: true
-        // }
     })
 
     return {
@@ -278,7 +273,7 @@ const getMyProfile = async (user: IJWTPayload) => {
                 needPasswordChange: true,
                 status: true,
                 isDeleted: true,
-                ratingAvg: true,
+                avgRating: true,
                 createdAt: true,
                 updatedAt: true
             }
@@ -300,7 +295,7 @@ const getMyProfile = async (user: IJWTPayload) => {
                 needPasswordChange: true,
                 status: true,
                 isDeleted: true,
-                ratingAvg: true,
+                avgRating: true,
                 createdAt: true,
                 updatedAt: true,
                 profile: {
@@ -333,7 +328,7 @@ const getMyProfile = async (user: IJWTPayload) => {
                 needPasswordChange: true,
                 status: true,
                 isDeleted: true,
-                ratingAvg: true,
+                avgRating: true,
                 createdAt: true,
                 updatedAt: true
             }

@@ -6,7 +6,7 @@ const profileValidation = z.object({
   languages: z.array(z.string()).optional(),
   experienceYears: z.number().optional(),
   feePerHour: z.number().optional(),
-  locationId: z.string().optional(),
+  locationId: z.string().optional().nullable(),
 }).optional();
 
 const createUserValidation = z.object({

@@ -1,4 +1,4 @@
-import { Profile, User, UserRole } from "@prisma/client";
+import { Profile, User, UserRole, UserStatus } from "@prisma/client";
 
 export type IJWTPayload = {
     id: string;
@@ -6,7 +6,8 @@ export type IJWTPayload = {
     role: UserRole;
 }
 
-export type UserWithProfile = User & {
+export type UserWithProfile = Omit<User, "password"> & {
     profile?: Profile | null;
 };
+
 

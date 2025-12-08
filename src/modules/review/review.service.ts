@@ -50,7 +50,7 @@ const insertIntoDB = async (user: IJWTPayload, payload: { tourId: string, rating
                 id: tour.guideId
             },
             data: {
-                ratingAvg: avgRating._avg.rating ?? 0
+                avgRating: avgRating._avg.rating ?? 0
             }
         })
 

@@ -78,20 +78,6 @@ CREATE TABLE "reports" (
 );
 
 -- CreateTable
-CREATE TABLE "notifications" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "title" TEXT,
-    "message" TEXT NOT NULL,
-    "meta" JSONB,
-    "read" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "locations" (
     "id" TEXT NOT NULL,
     "city" TEXT NOT NULL,
@@ -121,7 +107,8 @@ CREATE TABLE "tours" (
     "description" TEXT NOT NULL,
     "city" TEXT NOT NULL,
     "durationHours" INTEGER NOT NULL,
-    "price" DOUBLE PRECISION NOT NULL,
+    "images" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "tourFee" DOUBLE PRECISION NOT NULL,
     "maxPeople" INTEGER NOT NULL,
     "meetingPoint" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -138,7 +125,7 @@ CREATE TABLE "bookings" (
     "availabilityId" TEXT NOT NULL,
     "bookingDate" TIMESTAMP(3) NOT NULL,
     "status" "BookingStatus" NOT NULL DEFAULT 'PENDING',
-    "totalPrice" DOUBLE PRECISION NOT NULL,
+    "totalFee" DOUBLE PRECISION NOT NULL,
     "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'UNPAID',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -175,18 +162,6 @@ CREATE TABLE "payments" (
 );
 
 -- CreateTable
-CREATE TABLE "tourImages" (
-    "id" TEXT NOT NULL,
-    "tourId" TEXT NOT NULL,
-    "url" TEXT NOT NULL,
-    "alt" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "tourImages_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -197,7 +172,6 @@ CREATE TABLE "users" (
     "address" TEXT,
     "needPasswordChange" BOOLEAN NOT NULL DEFAULT true,
     "role" "UserRole" NOT NULL DEFAULT 'TOURIST',
-    "ratingAvg" DOUBLE PRECISION DEFAULT 0,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "status" "UserStatus" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -214,10 +188,10 @@ CREATE TABLE "profiles" (
     "languages" TEXT[],
     "experienceYears" INTEGER,
     "locationId" TEXT,
-    "pricePerHour" DOUBLE PRECISION,
+    "avgRating" DOUBLE PRECISION DEFAULT 0,
+    "feePerHour" DOUBLE PRECISION,
     "availableStatus" BOOLEAN NOT NULL DEFAULT true,
     "verificationStatus" "GuideVerificationStatus" NOT NULL DEFAULT 'PENDING',
-    "nidOrPassportUrl" TEXT,
     "adminNote" TEXT,
 
     CONSTRAINT "profiles_pkey" PRIMARY KEY ("id")
@@ -266,9 +240,6 @@ ALTER TABLE "reports" ADD CONSTRAINT "reports_reporterId_fkey" FOREIGN KEY ("rep
 ALTER TABLE "reports" ADD CONSTRAINT "reports_guideId_fkey" FOREIGN KEY ("guideId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "guideLocations" ADD CONSTRAINT "guideLocations_guideId_fkey" FOREIGN KEY ("guideId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -297,9 +268,6 @@ ALTER TABLE "reviews" ADD CONSTRAINT "reviews_tourId_fkey" FOREIGN KEY ("tourId"
 
 -- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "bookings"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "tourImages" ADD CONSTRAINT "tourImages_tourId_fkey" FOREIGN KEY ("tourId") REFERENCES "tours"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "profiles" ADD CONSTRAINT "profiles_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "locations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
