@@ -38,9 +38,9 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
     })
 })
 const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-   const {guideLocationId} = req.params; 
+   const {id} = req.params; 
   
-    const result = await GuideLocationService.getSingleByIdFromDB(req.user as IJWTPayload, guideLocationId);
+    const result = await GuideLocationService.getSingleByIdFromDB(req.user as IJWTPayload, id);
     console.log("result", result);
 
     sendResponse(res, {
@@ -53,8 +53,8 @@ const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayloa
 
 
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const guideLocationId = req.params.guideLocationId;
-    const result = await GuideLocationService.deleteFromDB(guideLocationId);
+  const id = req.params.id;
+    const result = await GuideLocationService.deleteFromDB(id);
     console.log("result delete", result);
 
     sendResponse(res, {

@@ -87,12 +87,12 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
     data:findData
 }
 }
-const getSingleByIdFromDB = async (user:IJWTPayload, reportId:string)=>{
+const getSingleByIdFromDB = async (user:IJWTPayload, id:string)=>{
     if(user.role !== UserRole.TOURIST && user.role !== UserRole.ADMIN){
         throw new ApiError(httpStatus.UNAUTHORIZED,"Only the Tourist or Admin can access report details");
     }
     const result = await prisma.report.findUniqueOrThrow({
-        where:{id: reportId},
+        where:{id: id},
         
         include: {
             guide: true,
@@ -109,8 +109,8 @@ const getSingleByIdFromDB = async (user:IJWTPayload, reportId:string)=>{
 
 
 
-const updateIntoDB = async (user:IJWTPayload, reporterId:string, reason:string, details?:string)=>{
-    const exists = await prisma.report.findUniqueOrThrow({ where: { id: reporterId } });
+const updateIntoDB = async (user:IJWTPayload, id:string, reason:string, details?:string)=>{
+    const exists = await prisma.report.findUniqueOrThrow({ where: { id: id } });
     
     if(user.role !== UserRole.ADMIN ){
         throw new ApiError(httpStatus.UNAUTHORIZED,"Only the Admin can update report");
@@ -132,7 +132,7 @@ const updateIntoDB = async (user:IJWTPayload, reporterId:string, reason:string, 
     }
 
     const updateData = await prisma.report.update({
-        where:{id: reporterId},
+        where:{id: id},
         data:filteredData,
         include: {
             guide: true,
@@ -143,9 +143,9 @@ const updateIntoDB = async (user:IJWTPayload, reporterId:string, reason:string, 
      
     return  updateData
 }
-const deleteFromDB = async (reporterId:string)=>{
+const deleteFromDB = async (id:string)=>{
     const result = await prisma.report.delete({
-        where:{id: reporterId}
+        where:{id: id}
     })
     return result   
     

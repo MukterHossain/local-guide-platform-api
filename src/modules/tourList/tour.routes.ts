@@ -19,23 +19,11 @@ const router = express.Router();
 router.get("/me",
     auth(UserRole.ADMIN, UserRole.GUIDE),
     TourController.getMyTours)
-router.get("/:tourId",
+router.get("/:id",
     auth(UserRole.ADMIN, UserRole.GUIDE),
     TourController.getSingleByIdFromDB)
 
 router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE), TourController.getAllFromDB)
-
-// router.post("/",
-//     auth(UserRole.GUIDE, UserRole.ADMIN),
-//     fileUploader.upload.single('file'),
-//     (req: Request, res: Response, next: NextFunction) => {
-//         const parsedBody = tourValidation.tourCreateValidation.parse(JSON.parse(req.body.data))
-//         req.body = parsedBody;
-//         req.body.file = req.file;
-//         return TourController.inserIntoDB(req, res, next)
-//     }
-// )
-
 
 router.post(
   "/",
@@ -61,29 +49,12 @@ const result = await TourService.inserIntoDB(
   })
 );
 
-// router.post(
-//     "/",
-//     auth(UserRole.GUIDE),
-//     fileUploader.upload.array("images", 5), // multiple images
-//     catchAsync(async (req: Request & { user?: IJWTPayload }, res: Response) => {
-//         const files = req.files as Express.Multer.File[];
-//         if (files && files.length > 0) {
-//             const imageUrls = await fileUploader.uploadToCloudinary(files);
-//             req.body.images = imageUrls; // multiple image URLs
-//         }
-//     })
-// )
 
-// router.post("/",
-//     auth(UserRole.GUIDE, UserRole.ADMIN), 
-//     validateRequest(tourValidation.tourCreateValidation), 
-//     TourController.createTour
-//     )
-router.patch("/:tourId",
+router.patch("/:id",
     auth(UserRole.GUIDE, UserRole.ADMIN),
     validateRequest(tourValidation.tourUpdateValidation), TourController.updateIntoDB
 )
-router.delete("/:tourId",
+router.delete("/:id",
     auth(UserRole.GUIDE, UserRole.ADMIN), TourController.deleteFromDB
 )
 

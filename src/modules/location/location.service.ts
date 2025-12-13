@@ -86,12 +86,12 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
     data:findData
 }
 }
-const getSingleByIdFromDB = async (user:IJWTPayload, locationId:string)=>{
+const getSingleByIdFromDB = async (user:IJWTPayload, id:string)=>{
     if(user.role !== UserRole.GUIDE && user.role !== UserRole.ADMIN){
         throw new ApiError(httpStatus.UNAUTHORIZED,"Only Guide or Admin is allowed to access location details");
     }
     const location = await prisma.location.findUniqueOrThrow({
-        where:{id: locationId},
+        where:{id: id},
         
         include: {
             guideLocations: true,
@@ -108,8 +108,8 @@ const getSingleByIdFromDB = async (user:IJWTPayload, locationId:string)=>{
 
 
 
-const updateIntoDB = async (user:IJWTPayload, locationId:string, city:string, country:string)=>{
-    const exists = await prisma.location.findUniqueOrThrow({ where: { id: locationId } });
+const updateIntoDB = async (user:IJWTPayload, id:string, city:string, country:string)=>{
+    const exists = await prisma.location.findUniqueOrThrow({ where: { id: id } });
     
     if(user.role !== UserRole.ADMIN ){
         throw new ApiError(httpStatus.UNAUTHORIZED,"Only the Admin can update location");
@@ -131,7 +131,7 @@ const updateIntoDB = async (user:IJWTPayload, locationId:string, city:string, co
     }
 
     const updateData = await prisma.location.update({
-        where:{id: locationId},
+        where:{id: id},
         data:filteredData,
         include: {
             guideLocations: true,
@@ -142,9 +142,9 @@ const updateIntoDB = async (user:IJWTPayload, locationId:string, city:string, co
      
     return  updateData
 }
-const deleteFromDB = async (locationId:string)=>{
+const deleteFromDB = async (id:string)=>{
     const result = await prisma.location.delete({
-        where:{id: locationId}
+        where:{id: id}
     })
     return result   
     

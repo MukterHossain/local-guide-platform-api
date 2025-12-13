@@ -153,9 +153,9 @@ const getAllFromDB = async (params: any, options: IOptions) => {
         data: bookings
     }
 }
-const getSingleByIdFromDB = async (user: IJWTPayload, bookingId: string) => {
+const getSingleByIdFromDB = async (user: IJWTPayload, id: string) => {
     const booking = await prisma.booking.findUniqueOrThrow({
-        where: { id: bookingId },
+        where: { id: id },
         include: {
             tour: true,
             user: {
@@ -217,10 +217,10 @@ const getMyBooking = async (user: IJWTPayload) => {
     return bookings
 }
 
-const updateBookingStatus = async (user: IJWTPayload, bookingId: string, status: BookingStatus) => {
+const updateBookingStatus = async (user: IJWTPayload, id: string, status: BookingStatus) => {
 
     const booking = await prisma.booking.findUniqueOrThrow({
-        where: { id: bookingId },
+        where: { id: id },
         include: { tour: true }
     })
 
@@ -245,7 +245,7 @@ const updateBookingStatus = async (user: IJWTPayload, bookingId: string, status:
     }
 
     const updatedBooking = await prisma.booking.update({
-        where: { id: bookingId },
+        where: { id: id },
         data: { status },
         include: {
             tour: true,
@@ -257,10 +257,10 @@ const updateBookingStatus = async (user: IJWTPayload, bookingId: string, status:
     return updatedBooking
 
 }
-const updateIntoDB = async (user: IJWTPayload, bookingId: string, payload: any) => {
+const updateIntoDB = async (user: IJWTPayload, id: string, payload: any) => {
 
     const existingBooking = await prisma.booking.findUniqueOrThrow({
-        where: { id: bookingId },
+        where: { id: id },
         include: { tour: true }
     })
 
@@ -288,7 +288,7 @@ const updateIntoDB = async (user: IJWTPayload, bookingId: string, payload: any) 
     }
 
     const updatedBooking = await prisma.booking.update({
-        where: { id: bookingId },
+        where: { id: id },
         data: payload,
         include: {
             tour: true,
@@ -299,9 +299,9 @@ const updateIntoDB = async (user: IJWTPayload, bookingId: string, payload: any) 
 
     return updatedBooking
 }
-const deleteFromDB = async (bookingId: string) => {
+const deleteFromDB = async (id: string) => {
     const result = await prisma.booking.delete({
-        where: { id: bookingId }
+        where: { id: id }
     })
     return result
 

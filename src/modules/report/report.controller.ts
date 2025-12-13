@@ -38,9 +38,9 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
     })
 })
 const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-   const {reporterId} = req.params; 
+   const {id} = req.params; 
   
-    const result = await ReportService.getSingleByIdFromDB(req.user as IJWTPayload, reporterId);
+    const result = await ReportService.getSingleByIdFromDB(req.user as IJWTPayload, id);
     console.log("result", result);
 
     sendResponse(res, {
@@ -53,9 +53,9 @@ const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayloa
 
 const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
   const user = req.user  
-  const reporterId = req.params.reporterId;
+  const id = req.params.id;
   const {reason, details}= req.body;
-    const result = await ReportService.updateIntoDB(user as IJWTPayload , reporterId, reason, details);
+    const result = await ReportService.updateIntoDB(user as IJWTPayload , id, reason, details);
     console.log("result", result);
 
     sendResponse(res, {
@@ -66,8 +66,8 @@ const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, re
     })
 })
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const reporterId = req.params.reporterId;
-    const result = await ReportService.deleteFromDB(reporterId);
+  const id = req.params.id;
+    const result = await ReportService.deleteFromDB(id);
     console.log("result delete", result);
 
     sendResponse(res, {

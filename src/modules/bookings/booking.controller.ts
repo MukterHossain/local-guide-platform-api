@@ -35,9 +35,9 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
     })
 })
 const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-   const {bookingId} = req.params; 
+   const {id} = req.params; 
   
-    const result = await BookingService.getSingleByIdFromDB(req.user as IJWTPayload, bookingId);
+    const result = await BookingService.getSingleByIdFromDB(req.user as IJWTPayload, id);
     console.log("result", result);
 
     sendResponse(res, {
@@ -61,9 +61,9 @@ const getMyBooking = catchAsync (async (req:Request & { user?: IJWTPayload }, re
 })
 const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
   const user = req.user  
-  const bookingId = req.params.bookingId;
+  const id = req.params.id;
   const payload = req.body;
-    const result = await BookingService.updateIntoDB(user as IJWTPayload , bookingId, payload);
+    const result = await BookingService.updateIntoDB(user as IJWTPayload , id, payload);
     console.log("result", result);
 
     sendResponse(res, {
@@ -75,9 +75,9 @@ const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, re
 })
 const updateBookingStatus = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
   const user = req.user  
-  const bookingId = req.params.bookingId;
+  const id = req.params.id;
   const {status} = req.body;
-    const result = await BookingService.updateBookingStatus(user as IJWTPayload , bookingId, status);
+    const result = await BookingService.updateBookingStatus(user as IJWTPayload , id, status);
     console.log("result", result);
 
     sendResponse(res, {
@@ -88,8 +88,8 @@ const updateBookingStatus = catchAsync (async (req:Request & { user?: IJWTPayloa
     })
 })
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const bookingId = req.params.bookingId;
-    const result = await BookingService.deleteFromDB(bookingId);
+  const id = req.params.id;
+    const result = await BookingService.deleteFromDB(id);
     console.log("result delete", result);
 
     sendResponse(res, {

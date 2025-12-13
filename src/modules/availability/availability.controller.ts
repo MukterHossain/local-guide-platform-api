@@ -39,9 +39,9 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
     })
 })
 const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-   const {availabilityId} = req.params; 
+   const {id} = req.params; 
   
-    const result = await AvailabilityService.getSingleByIdFromDB(req.user as IJWTPayload, availabilityId);
+    const result = await AvailabilityService.getSingleByIdFromDB(req.user as IJWTPayload, id);
     console.log("result", result);
 
     sendResponse(res, {
@@ -54,9 +54,9 @@ const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayloa
 
 const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
   const user = req.user  
-  const availabilityId = req.params.availabilityId;
+  const id = req.params.id;
   const {startAt, endAt}= req.body;
-    const result = await AvailabilityService.updateIntoDB(user as IJWTPayload , availabilityId, new Date(startAt), new Date(endAt));
+    const result = await AvailabilityService.updateIntoDB(user as IJWTPayload , id, new Date(startAt), new Date(endAt));
     console.log("result", result);
 
     sendResponse(res, {
@@ -67,8 +67,8 @@ const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, re
     })
 })
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const categoryId = req.params.categoryId;
-    const result = await AvailabilityService.deleteFromDB(categoryId);
+  const id = req.params.id;
+    const result = await AvailabilityService.deleteFromDB(id);
     console.log("result delete", result);
 
     sendResponse(res, {

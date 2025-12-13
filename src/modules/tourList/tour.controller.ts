@@ -36,9 +36,9 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
     })
 })
 const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-   const {tourId} = req.params; 
+   const {id} = req.params; 
   
-    const result = await TourService.getSingleByIdFromDB(req.user as IJWTPayload, tourId);
+    const result = await TourService.getSingleByIdFromDB(req.user as IJWTPayload, id);
     console.log("result", result);
 
     sendResponse(res, {
@@ -62,9 +62,9 @@ const getMyTours = catchAsync (async (req:Request & { user?: IJWTPayload }, res:
 })
 const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
   const user = req.user  
-  const tourId = req.params.tourId;
+  const id = req.params.id;
   const payload = req.body;
-    const result = await TourService.updateIntoDB(user as IJWTPayload , tourId, payload);
+    const result = await TourService.updateIntoDB(user as IJWTPayload , id, payload);
     console.log("result", result);
 
     sendResponse(res, {
@@ -75,8 +75,8 @@ const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, re
     })
 })
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const tourId = req.params.tourId;
-    const result = await TourService.deleteFromDB(tourId);
+  const id = req.params.id;
+    const result = await TourService.deleteFromDB(id);
     console.log("result delete", result);
 
     sendResponse(res, {

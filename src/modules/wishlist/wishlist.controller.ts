@@ -36,9 +36,9 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
     })
 })
 const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-   const {wishlistId} = req.params; 
+   const {id} = req.params; 
   
-    const result = await WishlistService.getSingleByIdFromDB(req.user as IJWTPayload, wishlistId);
+    const result = await WishlistService.getSingleByIdFromDB(req.user as IJWTPayload, id);
     console.log("result", result);
 
     sendResponse(res, {
@@ -51,9 +51,9 @@ const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayloa
 
 const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
   const user = req.user  
-  const wishlistId = req.params.wishlistId;
+  const id = req.params.id;
   const payload = req.body;
-    const result = await WishlistService.updateIntoDB(user as IJWTPayload , wishlistId, payload);
+    const result = await WishlistService.updateIntoDB(user as IJWTPayload , id, payload);
     console.log("result", result);
 
     sendResponse(res, {
@@ -65,8 +65,8 @@ const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, re
 })
 
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const wishlistId = req.params.wishlistId;
-    const result = await WishlistService.deleteFromDB(wishlistId);
+  const id = req.params.id;
+    const result = await WishlistService.deleteFromDB(id);
     console.log("result delete", result);
 
     sendResponse(res, {

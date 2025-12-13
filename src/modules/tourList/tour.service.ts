@@ -104,9 +104,9 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
     }, 
     data:tours}
 }
-const getSingleByIdFromDB = async (user:IJWTPayload, tourId:string)=>{
+const getSingleByIdFromDB = async (user:IJWTPayload, id:string)=>{
     const tour = await prisma.tour.findUniqueOrThrow({
-        where:{id: tourId},
+        where:{id: id},
         include: {
             guide: {
                 select: {    
@@ -173,10 +173,10 @@ const getMyTours = async (user: IJWTPayload) => {
       return bookings
 }
 
-const updateIntoDB = async (user:IJWTPayload, tourId:string, payload:any)=>{
+const updateIntoDB = async (user:IJWTPayload, id:string, payload:any)=>{
     
     const existingBooking = await prisma.tour.findUniqueOrThrow({
-        where:{id: tourId}
+        where:{id: id}
     })
 
     if(user.role === UserRole.TOURIST ){
@@ -200,7 +200,7 @@ const updateIntoDB = async (user:IJWTPayload, tourId:string, payload:any)=>{
     }
 
     const updatedTour = await prisma.tour.update({
-        where:{id: tourId},
+        where:{id: id},
         data:payload,
         include: {
         guide: true,
@@ -212,9 +212,9 @@ const updateIntoDB = async (user:IJWTPayload, tourId:string, payload:any)=>{
      
     return  updatedTour
 }
-const deleteFromDB = async (tourId:string)=>{
+const deleteFromDB = async (id:string)=>{
     const result = await prisma.tour.delete({
-        where:{id: tourId}
+        where:{id: id}
     })
     return result   
     

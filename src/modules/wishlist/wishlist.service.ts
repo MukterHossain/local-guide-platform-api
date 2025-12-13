@@ -96,13 +96,13 @@ const getAllFromDB = async (params: any, options: IOptions) => {
         data: result
     }
 }
-const getSingleByIdFromDB = async (user: IJWTPayload, wishlistId: string) => {
+const getSingleByIdFromDB = async (user: IJWTPayload, id: string) => {
 
     if (user.role !== UserRole.TOURIST && user.role !== UserRole.ADMIN) {
         throw new ApiError(httpStatus.UNAUTHORIZED, "Only Tourist and Admin can view wishlist");
     }
     const wishlist = await prisma.wishlist.findUniqueOrThrow({
-        where: { id: wishlistId },
+        where: { id: id },
         include: {
             user: true
         }
@@ -114,10 +114,10 @@ const getSingleByIdFromDB = async (user: IJWTPayload, wishlistId: string) => {
 
 
 
-const updateIntoDB = async (user: IJWTPayload, wishlistId: string, payload: any) => {
+const updateIntoDB = async (user: IJWTPayload, id: string, payload: any) => {
 
     const isExist = await prisma.wishlist.findUniqueOrThrow({
-        where: { id: wishlistId }
+        where: { id: id }
     })
 
     if (user.role !== UserRole.TOURIST) {
@@ -143,7 +143,7 @@ const updateIntoDB = async (user: IJWTPayload, wishlistId: string, payload: any)
     }
 
     const result = await prisma.wishlist.update({
-        where: { id: wishlistId },
+        where: { id: id },
         data: payload,
         include: {
             user: true
@@ -153,9 +153,9 @@ const updateIntoDB = async (user: IJWTPayload, wishlistId: string, payload: any)
 
     return result
 }
-const deleteFromDB = async (wishlistId: string) => {
+const deleteFromDB = async (id: string) => {
     const result = await prisma.wishlist.delete({
-        where: { id: wishlistId }
+        where: { id: id }
     })
     return result
 

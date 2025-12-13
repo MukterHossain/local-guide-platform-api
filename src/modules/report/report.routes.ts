@@ -16,7 +16,7 @@ const router = express.Router();
 
 router.get("/", auth(UserRole.ADMIN, UserRole.TOURIST), ReportController.getAllFromDB)
 
-router.get("/:reporterId",
+router.get("/:id",
     auth(UserRole.TOURIST, UserRole.ADMIN),
     ReportController.getSingleByIdFromDB
 )
@@ -26,12 +26,12 @@ router.post("/",
     validateRequest(ReportValidation.createReport), 
     ReportController.inserIntoDB
     )
-router.patch("/:reporterId",
+router.patch("/:id",
     auth(UserRole.ADMIN), 
     validateRequest(ReportValidation.updateReport), 
     ReportController.updateIntoDB
     )
-router.delete("/:reporterId",
+router.delete("/:id",
     auth(UserRole.ADMIN), ReportController.deleteFromDB
     )
 

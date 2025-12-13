@@ -83,9 +83,9 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
     }, 
     data:categories}
 }
-const getSingleByIdFromDB = async (user:IJWTPayload, categoryId:string)=>{
+const getSingleByIdFromDB = async (user:IJWTPayload, id:string)=>{
     const category = await prisma.category.findUniqueOrThrow({
-        where:{id: categoryId},
+        where:{id: id},
         
         include: {
             tourCategories: {
@@ -105,13 +105,13 @@ const getSingleByIdFromDB = async (user:IJWTPayload, categoryId:string)=>{
 
 
 
-const updateIntoDB = async (user:IJWTPayload, categoryId:string, payload:any)=>{
+const updateIntoDB = async (user:IJWTPayload, id:string, payload:any)=>{
     
     if(user.role !== UserRole.ADMIN ){
         throw new ApiError(httpStatus.UNAUTHORIZED,"Only Admin is allowed to update category");
     }
     const existingBooking = await prisma.category.findUniqueOrThrow({
-        where:{id: categoryId}
+        where:{id: id}
     })
 
    if(!existingBooking){
@@ -129,7 +129,7 @@ const updateIntoDB = async (user:IJWTPayload, categoryId:string, payload:any)=>{
     }
 
     const updatedCategory = await prisma.category.update({
-        where:{id: categoryId},
+        where:{id: id},
         data:filteredData,
         include: {
             tourCategories: {
@@ -143,9 +143,9 @@ const updateIntoDB = async (user:IJWTPayload, categoryId:string, payload:any)=>{
      
     return  updatedCategory
 }
-const deleteFromDB = async (categoryId:string)=>{
+const deleteFromDB = async (id:string)=>{
     const result = await prisma.category.delete({
-        where:{id: categoryId}
+        where:{id: id}
     })
     return result   
     

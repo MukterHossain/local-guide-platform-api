@@ -38,9 +38,9 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
     })
 })
 const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-   const {locationId} = req.params; 
+   const {id} = req.params; 
   
-    const result = await LocationService.getSingleByIdFromDB(req.user as IJWTPayload, locationId);
+    const result = await LocationService.getSingleByIdFromDB(req.user as IJWTPayload, id);
     console.log("result", result);
 
     sendResponse(res, {
@@ -53,9 +53,9 @@ const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayloa
 
 const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
   const user = req.user  
-  const locationId = req.params.locationId;
+  const id = req.params.id;
   const {city, country}= req.body;
-    const result = await LocationService.updateIntoDB(user as IJWTPayload , locationId, city, country);
+    const result = await LocationService.updateIntoDB(user as IJWTPayload , id, city, country);
     console.log("result", result);
 
     sendResponse(res, {
@@ -66,8 +66,8 @@ const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, re
     })
 })
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const locationId = req.params.locationId;
-    const result = await LocationService.deleteFromDB(locationId);
+  const id = req.params.id;
+    const result = await LocationService.deleteFromDB(id);
     console.log("result delete", result);
 
     sendResponse(res, {

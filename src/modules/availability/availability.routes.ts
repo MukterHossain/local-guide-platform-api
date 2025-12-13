@@ -16,7 +16,7 @@ const router = express.Router();
 
 router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE), AvailabilityController.getAllFromDB)
 
-router.get("/:availabilityId",
+router.get("/:id",
     auth(UserRole.GUIDE, UserRole.ADMIN),
     AvailabilityController.getSingleByIdFromDB
 )
@@ -26,12 +26,12 @@ router.post("/",
     validateRequest(AvailabelityValidation.createAvailabilitySchema), 
     AvailabilityController.inserIntoDB
     )
-router.patch("/:availabilityId",
+router.patch("/:id",
     auth(UserRole.GUIDE), 
     validateRequest(AvailabelityValidation.updateAvailabilitySchema), 
     AvailabilityController.updateIntoDB
     )
-router.delete("/:categoryId",
+router.delete("/:id",
     auth(UserRole.ADMIN), AvailabilityController.deleteFromDB
     )
 

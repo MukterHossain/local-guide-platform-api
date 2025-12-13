@@ -93,12 +93,12 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
     data:findData
 }
 }
-const getSingleByIdFromDB = async (user:IJWTPayload, guideLocationId:string)=>{
+const getSingleByIdFromDB = async (user:IJWTPayload, id:string)=>{
     if(user.role !== UserRole.GUIDE){
         throw new ApiError(httpStatus.UNAUTHORIZED,"Only Guide  is allowed to access guideLocation details");
     }
     const getData = await prisma.guideLocation.findUniqueOrThrow({
-        where:{id: guideLocationId},
+        where:{id: id},
         
         include: {
             guide: true,
@@ -116,9 +116,9 @@ const getSingleByIdFromDB = async (user:IJWTPayload, guideLocationId:string)=>{
 
 
 
-const deleteFromDB = async (guideLocationId:string)=>{
+const deleteFromDB = async (id:string)=>{
     const result = await prisma.guideLocation.delete({
-        where:{id: guideLocationId}
+        where:{id: id}
     })
     return result   
     

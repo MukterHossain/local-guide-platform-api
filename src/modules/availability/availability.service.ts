@@ -86,12 +86,12 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
     }, 
     data:categories}
 }
-const getSingleByIdFromDB = async (user:IJWTPayload, availabilityId:string)=>{
+const getSingleByIdFromDB = async (user:IJWTPayload, id:string)=>{
     if(user.role !== UserRole.GUIDE && user.role !== UserRole.ADMIN){
         throw new ApiError(httpStatus.UNAUTHORIZED,"Only Guide or Admin is allowed to access availability details");
     }
     const availability = await prisma.availability.findUniqueOrThrow({
-        where:{id: availabilityId},
+        where:{id: id},
         
         include: {
             guide: true
@@ -107,8 +107,8 @@ const getSingleByIdFromDB = async (user:IJWTPayload, availabilityId:string)=>{
 
 
 
-const updateIntoDB = async (user:IJWTPayload, availabilityId:string, startAt: Date, endAt: Date)=>{
-    const avail = await prisma.availability.findUniqueOrThrow({ where: { id: availabilityId } });
+const updateIntoDB = async (user:IJWTPayload, id:string, startAt: Date, endAt: Date)=>{
+    const avail = await prisma.availability.findUniqueOrThrow({ where: { id: id } });
     
     if(user.role !== UserRole.GUIDE || avail.guideId !== user.id){
         throw new ApiError(httpStatus.UNAUTHORIZED,"Only the guide can update availability");
@@ -126,7 +126,7 @@ const updateIntoDB = async (user:IJWTPayload, availabilityId:string, startAt: Da
     }
 
     const updateData = await prisma.availability.update({
-        where:{id: availabilityId},
+        where:{id: id},
         data:filteredData,
         include: {
             guide: true
@@ -136,9 +136,9 @@ const updateIntoDB = async (user:IJWTPayload, availabilityId:string, startAt: Da
      
     return  updateData
 }
-const deleteFromDB = async (categoryId:string)=>{
+const deleteFromDB = async (id:string)=>{
     const result = await prisma.category.delete({
-        where:{id: categoryId}
+        where:{id: id}
     })
     return result   
     

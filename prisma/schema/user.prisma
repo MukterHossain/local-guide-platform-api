@@ -5,7 +5,10 @@ model User {
     password           String
     phone              String?
     image              String?
+    gender              Gender
     address            String?
+    bio                String?
+    languages          String[] // ["English","Bangla"]
     needPasswordChange Boolean    @default(true)
     role               UserRole   @default(TOURIST)
     isDeleted          Boolean    @default(false)
@@ -30,13 +33,12 @@ model User {
 model Profile {
     id                 String                  @id @default(cuid())
     userId             String                  @unique
-    bio                String?
-    languages          String[] // ["English","Bangla"]
+    expertise          String?
     experienceYears    Int?
     locationId         String?
-    avgRating          Float?     @default(0)
+    avgRating          Float?                  @default(0)
     location           Location?               @relation(fields: [locationId], references: [id])
-    feePerHour       Float?
+    feePerHour         Float?
     availableStatus    Boolean                 @default(true)
     verificationStatus GuideVerificationStatus @default(PENDING)
     adminNote          String?

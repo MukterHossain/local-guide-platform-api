@@ -40,9 +40,9 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
     })
 })
 const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-   const {categoryId} = req.params; 
+   const {id} = req.params; 
   
-    const result = await CategoryService.getSingleByIdFromDB(req.user as IJWTPayload, categoryId);
+    const result = await CategoryService.getSingleByIdFromDB(req.user as IJWTPayload, id);
     console.log("result", result);
 
     sendResponse(res, {
@@ -55,9 +55,9 @@ const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayloa
 
 const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
   const user = req.user  
-  const categoryId = req.params.categoryId;
+  const id = req.params.id;
   const payload = req.body;
-    const result = await CategoryService.updateIntoDB(user as IJWTPayload , categoryId, payload);
+    const result = await CategoryService.updateIntoDB(user as IJWTPayload , id, payload);
     console.log("result", result);
 
     sendResponse(res, {
@@ -68,8 +68,8 @@ const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, re
     })
 })
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const categoryId = req.params.categoryId;
-    const result = await CategoryService.deleteFromDB(categoryId);
+  const id = req.params.id;
+    const result = await CategoryService.deleteFromDB(id);
     console.log("result delete", result);
 
     sendResponse(res, {

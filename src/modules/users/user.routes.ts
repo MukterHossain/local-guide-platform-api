@@ -14,7 +14,10 @@ const router = express.Router();
 router.get("/me",
     auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
     UserController.getMyProfile)
-router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), UserController.getAllFromDB)
+router.get("/", auth(UserRole.ADMIN), UserController.getAllFromDB)
+router.get("/guides", auth(UserRole.ADMIN), UserController.getGuidesAllFromDB)
+router.get("/tourists", auth(UserRole.ADMIN), UserController.getTouristsAllFromDB)
+router.get("/:id", auth(UserRole.ADMIN), UserController.getSingleByIdFromDB)
 
 router.post(
     "/register",
@@ -36,11 +39,6 @@ router.post(
             next(error);
         }
     }
-    // fileUploader.upload.single("file"), // single image
-    // (req: Request, res: Response, next: NextFunction) => {
-    //     req.body = userValidation.createUserValidation.parse(JSON.parse(req.body.data));
-    //     return UserController.createUser(req, res, next);
-    // }
 );
 router.post("/admin",
     fileUploader.upload.single('file'),
@@ -62,8 +60,8 @@ router.patch("/update-profile",
     fileUploader.upload.single('file'),
     (req: Request & { user?: IJWTPayload }, res: Response, next: NextFunction) => {
         // Tourist and Admin 
-        if (req.user!.role === "TOURIST" || req.user!.role === "ADMIN") {
-            req.body = userValidation.updateTouristAdnAdminSchema.parse(JSON.parse(req.body.data));
+        if (req.user!.role === "ADMIN" || req.user!.role === "TOURIST") {
+            req.body = userValidation.updateTouristAdminSchema.parse(JSON.parse(req.body.data));
         }
         // Guide 
         if (req.user!.role === "GUIDE") {

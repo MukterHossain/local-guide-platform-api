@@ -16,7 +16,7 @@ const router = express.Router();
 
 router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), CategoryController.getAllFromDB)
 
-router.get("/:categoryId",
+router.get("/:id",
     auth(UserRole.ADMIN),
     CategoryController.getSingleByIdFromDB
 )
@@ -26,12 +26,12 @@ router.post("/",
     validateRequest(CategoryValidation.categoryCreateValidation), 
     CategoryController.inserIntoDB
     )
-router.patch("/:categoryId",
+router.patch("/:id",
     auth(UserRole.ADMIN), 
     validateRequest(CategoryValidation.categoryUpdateValidation), 
     CategoryController.updateIntoDB
     )
-router.delete("/:categoryId",
+router.delete("/:id",
     auth(UserRole.ADMIN), CategoryController.deleteFromDB
     )
 

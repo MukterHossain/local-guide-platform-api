@@ -46,6 +46,36 @@ const getAllFromDB = catchAsync (async (req:Request , res:Response) =>{
         meta: result.meta
     })
 })
+const getGuidesAllFromDB = catchAsync (async (req:Request , res:Response) =>{
+     const filters = pick(req.query, userFilterableFields) // searching , filtering
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
+
+    const result = await UserService.getGuidesAllFromDB(filters, options)
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User guides retrieved successfully",
+        data: result.data,
+        meta: result.meta
+    })
+})
+const getTouristsAllFromDB = catchAsync (async (req:Request , res:Response) =>{
+     const filters = pick(req.query, userFilterableFields) // searching , filtering
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
+
+    const result = await UserService.getTouristsAllFromDB(filters, options)
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User tourists retrieved successfully",
+        data: result.data,
+        meta: result.meta
+    })
+})
 const getMyProfile = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
     const user = req.user;
     const result = await UserService.getMyProfile(user as IJWTPayload)
@@ -55,6 +85,19 @@ const getMyProfile = catchAsync (async (req:Request & { user?: IJWTPayload }, re
         statusCode: httpStatus.OK,
         success: true,
         message: "User retrieved successfully",
+        data: result
+    })
+})
+const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
+    const {id }= req.params;
+
+    const result = await UserService.getSingleByIdFromDB(req.user as IJWTPayload ,id)
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User  retrieved successfully",
         data: result
     })
 })
@@ -88,7 +131,10 @@ export const UserController = {
     createUser,
     createAdmin,
     getAllFromDB,
+    getGuidesAllFromDB,
+    getTouristsAllFromDB,
     getMyProfile,
+    getSingleByIdFromDB,
     updateMyProfie,
     changeUserStatus
 }

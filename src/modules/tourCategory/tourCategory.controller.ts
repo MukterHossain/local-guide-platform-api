@@ -39,8 +39,8 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
 
 
 const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const tourCategoryId = req.params.tourCategoryId;
-    const result = await TourCategoryService.deleteFromDB(tourCategoryId);
+  const id = req.params.id;
+    const result = await TourCategoryService.deleteFromDB(id);
     console.log("result delete", result);
 
     sendResponse(res, {

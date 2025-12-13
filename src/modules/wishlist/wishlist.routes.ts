@@ -12,7 +12,7 @@ const router = express.Router();
 
 
 
-router.get("/:wishlistId",
+router.get("/:id",
     auth(UserRole.ADMIN,  UserRole.TOURIST),
     WishlistController.getSingleByIdFromDB)
 
@@ -22,14 +22,14 @@ router.post("/",
     validateRequest(wishlistValidation.wishlistCreateValidation),
     auth(UserRole.TOURIST), WishlistController.inserIntoDB
 )
-router.patch("/:wishlistId",
+router.patch("/:id",
     auth(UserRole.TOURIST, UserRole.ADMIN), WishlistController.updateIntoDB
 )
-router.patch("/:wishlistId",
+router.patch("/:id",
     auth(UserRole.TOURIST, UserRole.ADMIN, UserRole.GUIDE), 
     validateRequest(wishlistValidation.wishlistUpdateValidation),WishlistController.updateIntoDB
 )
-router.delete("/:wishlistId",
+router.delete("/:id",
     auth(UserRole.TOURIST, UserRole.ADMIN), WishlistController.deleteFromDB
 )
 

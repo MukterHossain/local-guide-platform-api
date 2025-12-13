@@ -10,7 +10,7 @@ const router = express.Router();
 router.get("/me",
     auth(UserRole.TOURIST , UserRole.GUIDE),
     BookingController.getMyBooking)
-router.get("/:bookingId",
+router.get("/:id",
     auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
     BookingController.getSingleByIdFromDB)
 
@@ -19,13 +19,13 @@ router.get("/", auth(UserRole.ADMIN), BookingController.getAllFromDB)
 router.post("/",
     auth(UserRole.TOURIST), BookingController.createBooking
 )
-router.patch("/:bookingId",
+router.patch("/:id",
     auth(UserRole.TOURIST, UserRole.ADMIN), BookingController.updateIntoDB
 )
-router.patch("/status/:bookingId",
+router.patch("/status/:id",
     auth(UserRole.TOURIST, UserRole.ADMIN, UserRole.GUIDE), BookingController.updateBookingStatus
 )
-router.delete("/:bookingId",
+router.delete("/:id",
     auth(UserRole.TOURIST, UserRole.ADMIN), BookingController.deleteFromDB
 )
 
