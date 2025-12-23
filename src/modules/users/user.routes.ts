@@ -24,16 +24,11 @@ router.post(
     fileUploader.upload.single("file"),
     (req: Request, res: Response, next: NextFunction) => {
         try {
-            console.log("REQ.BODY:", req.body);
-            console.log("REQ.FILE:", req.file);
-
             if (!req.body?.data) {
                 throw new Error("No JSON data found in 'data' field");
             }
-
             const parsed = JSON.parse(req.body.data);
             req.body = userValidation.createUserValidation.parse(parsed);
-
             return UserController.createUser(req, res, next);
         } catch (error) {
             next(error);
@@ -59,15 +54,7 @@ router.patch("/update-profile",
     auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
     fileUploader.upload.single('file'),
     (req: Request & { user?: IJWTPayload }, res: Response, next: NextFunction) => {
-        // Tourist and Admin 
-        if (req.user!.role === "ADMIN" || req.user!.role === "TOURIST") {
-            req.body = userValidation.updateTouristAdminSchema.parse(JSON.parse(req.body.data));
-        }
-        // Guide 
-        if (req.user!.role === "GUIDE") {
-            req.body = userValidation.updateGuideProfileSchema.parse(JSON.parse(req.body.data));
-        }
-
+        req.body = userValidation.updateUserSchema.parse(JSON.parse(req.body.data));
         next()
     },
     UserController.updateMyProfie

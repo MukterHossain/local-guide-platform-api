@@ -3,6 +3,8 @@ import { AuthController } from './auth.controller';
 
 import { UserRole } from '@prisma/client';
 import auth from '../../middlewares/auth';
+import validateRequest from '../../middlewares/validateRequest';
+import { changePasswordSchema } from './auth.validation';
 
 const router = express.Router();
 
@@ -13,7 +15,7 @@ router.get(
 )
 router.post("/login", AuthController.login)
 
-    router.post(
+router.post(
     '/refresh-token',
     AuthController.refreshToken
 )
@@ -25,6 +27,7 @@ router.post(
         UserRole.GUIDE,
         UserRole.TOURIST
     ),
+    validateRequest(changePasswordSchema),
     AuthController.changePassword
 );
 

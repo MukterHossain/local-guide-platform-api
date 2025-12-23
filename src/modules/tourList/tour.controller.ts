@@ -1,14 +1,16 @@
 import { Request, Response } from "express";
 import catchAsync from "../../shared/catchAsync";
-
 import httpStatus from 'http-status'
 import sendResponse from "../../shared/sendResponse";
 import { IJWTPayload } from "../../types/common";
 import { TourService } from "./tour.service";
 import pick from "../../helper/pick";
 import { tourFilterableFields } from "./tour.constant";
+import { fileUploader } from "../../helper/fileUploader";
+import ApiError from "../../error/ApiError";
+import { tourUpdateValidation } from "./tour.validation";
 
-const inserIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload } , res:Response) =>{
+const inserIntoDB = catchAsync(async (req: Request & { user?: IJWTPayload }, res: Response) => {
     const result = await TourService.inserIntoDB(req.user!, req.body, req.files as Express.Multer.File[]);
     console.log("result", result);
 
@@ -20,7 +22,7 @@ const inserIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload } , re
     })
 })
 
-const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
+const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
     const filters = pick(req.query, tourFilterableFields)
     const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
 
@@ -35,9 +37,9 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
         data: result.data
     })
 })
-const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-   const {id} = req.params; 
-  
+const getSingleByIdFromDB = catchAsync(async (req: Request & { user?: IJWTPayload }, res: Response) => {
+    const { id } = req.params;
+
     const result = await TourService.getSingleByIdFromDB(req.user as IJWTPayload, id);
     console.log("result", result);
 
@@ -48,8 +50,8 @@ const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayloa
         data: result
     })
 })
-const getMyTours = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-  const user = req.user 
+const getMyTours = catchAsync(async (req: Request & { user?: IJWTPayload }, res: Response) => {
+    const user = req.user
     const result = await TourService.getMyTours(user as IJWTPayload);
     console.log("result", result);
 
@@ -60,11 +62,50 @@ const getMyTours = catchAsync (async (req:Request & { user?: IJWTPayload }, res:
         data: result
     })
 })
-const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-  const user = req.user  
-  const id = req.params.id;
-  const payload = req.body;
-    const result = await TourService.updateIntoDB(user as IJWTPayload , id, payload);
+const updateIntoDB = catchAsync(async (req: Request & { user?: IJWTPayload }, res: Response) => {
+    const user = req.user
+    const id = req.params.id;
+
+    let payload: any = {};
+    if (typeof req.body.data === "string") {
+        payload = JSON.parse(req.body.data);
+    }
+
+    const validation = tourUpdateValidation.safeParse(payload);
+  if (!validation.success) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Validation failed",
+      JSON.stringify(validation.error.flatten())
+    );
+  }
+
+  payload = validation.data;
+    // image upload
+     const files = req.files as Express.Multer.File[] | undefined;
+     let uploadedImages: string[] = [];
+
+    if (files && files.length > 0) {
+      const result = await fileUploader.uploadToCloudinary(files);
+      uploadedImages = Array.isArray(result) ? result : [result];
+    }
+    
+
+    if((payload.images && payload.images.length > 0) || uploadedImages.length > 0){
+    const existingImages = Array.isArray(payload.images)
+      ? payload.images
+      : [];
+
+      payload.images = [...existingImages, ...uploadedImages];
+    }
+    else{
+        delete payload.images;
+    }
+    
+
+    
+
+    const result = await TourService.updateIntoDB(user as IJWTPayload, id, payload);
     console.log("result", result);
 
     sendResponse(res, {
@@ -74,8 +115,8 @@ const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, re
         data: result
     })
 })
-const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
-  const id = req.params.id;
+const deleteFromDB = catchAsync(async (req: Request, res: Response) => {
+    const id = req.params.id;
     const result = await TourService.deleteFromDB(id);
     console.log("result delete", result);
 

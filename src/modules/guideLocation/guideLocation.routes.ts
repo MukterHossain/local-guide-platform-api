@@ -15,8 +15,9 @@ const router = express.Router();
 
 
 router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), GuideLocationController.getAllFromDB)
+router.get("/me", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), GuideLocationController.getMyGuideLocation)
 
-router.get("/:guideLocationId",
+router.get("/:id",
     auth(UserRole.GUIDE),
     GuideLocationController.getSingleByIdFromDB
 )
@@ -26,7 +27,7 @@ router.post("/",
     validateRequest(GuideLocationValidation.createGuideLocationSchema), 
     GuideLocationController.inserIntoDB
     )
-router.delete("/:guideLocationId",
+router.delete("/:id",
     auth(UserRole.GUIDE), GuideLocationController.deleteFromDB
     )
 

@@ -3,7 +3,6 @@ import express, { NextFunction, Request, Response } from 'express'
 import auth from '../../middlewares/auth';
 import { UserRole } from '@prisma/client';
 import { TourController } from './tour.controller';
-import { tourValidation } from './tour.validation';
 import validateRequest from '../../middlewares/validateRequest';
 import { fileUploader } from '../../helper/fileUploader';
 import catchAsync from '../../shared/catchAsync';
@@ -20,10 +19,10 @@ router.get("/me",
     auth(UserRole.ADMIN, UserRole.GUIDE),
     TourController.getMyTours)
 router.get("/:id",
-    auth(UserRole.ADMIN, UserRole.GUIDE),
+    auth(UserRole.ADMIN, UserRole.GUIDE , UserRole.TOURIST),
     TourController.getSingleByIdFromDB)
 
-router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE), TourController.getAllFromDB)
+router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), TourController.getAllFromDB)
 
 router.post(
   "/",
@@ -52,7 +51,8 @@ const result = await TourService.inserIntoDB(
 
 router.patch("/:id",
     auth(UserRole.GUIDE, UserRole.ADMIN),
-    validateRequest(tourValidation.tourUpdateValidation), TourController.updateIntoDB
+    fileUploader.upload.array("images", 5),
+     TourController.updateIntoDB
 )
 router.delete("/:id",
     auth(UserRole.GUIDE, UserRole.ADMIN), TourController.deleteFromDB

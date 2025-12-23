@@ -9,8 +9,8 @@ import { guideLocationFilterableFields } from "./guideLocation.constant";
 
 
 const inserIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload } , res:Response) =>{
-    const {guideId, locationId} = req.body;
-    const result = await GuideLocationService.inserIntoDB(req.user!, guideId, locationId );
+    const {locationId} = req.body;
+    const result = await GuideLocationService.inserIntoDB(req.user!,locationId );
     console.log("result", result);
 
     sendResponse(res, {
@@ -27,6 +27,22 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
     const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
 
     const result = await GuideLocationService.getAllFromDB(filters, options);
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "GuideLocation fetched successfully",
+        meta: result.meta,
+        data: result.data
+    })
+})
+const getMyGuideLocation = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
+    
+    const filters = pick(req.query, guideLocationFilterableFields) 
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
+
+    const result = await GuideLocationService.getMyGuideLocation(filters, options, req.user as IJWTPayload);
     console.log("result", result);
 
     sendResponse(res, {
@@ -76,6 +92,7 @@ const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
 export const GuideLocationController = {
     inserIntoDB,
     getAllFromDB,
+    getMyGuideLocation,
     getSingleByIdFromDB,
     deleteFromDB
 }

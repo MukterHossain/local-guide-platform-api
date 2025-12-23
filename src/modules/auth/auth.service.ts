@@ -95,8 +95,8 @@ const changePassword = async (user: any, payload: any) => {
     const isCorrectPassword: boolean = await bcrypt.compare(payload.oldPassword, userData.password);
 
     if (!isCorrectPassword) {
-        throw new Error("Password incorrect!")
-    }
+  throw new ApiError(httpStatus.BAD_REQUEST, "Old password is incorrect");
+}
 
     const hashedPassword: string = await bcrypt.hash(payload.newPassword, Number(config.salt_round));
 

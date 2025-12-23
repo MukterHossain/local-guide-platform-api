@@ -32,6 +32,7 @@ const inserIntoDB = async (user:IJWTPayload,  tourData: any, files: Express.Mult
             ...tourData,
             guideId: user.id
         }
+        
     });
     console.log("bookingData", tour)
      
@@ -84,6 +85,7 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
                     name: true,
                     role: true,
                     status: true,
+                    languages: true,
                     phone: true,
                     address: true,
                     image: true,
@@ -176,7 +178,7 @@ const getMyTours = async (user: IJWTPayload) => {
 const updateIntoDB = async (user:IJWTPayload, id:string, payload:any)=>{
     
     const existingBooking = await prisma.tour.findUniqueOrThrow({
-        where:{id: id}
+        where:{id}
     })
 
     if(user.role === UserRole.TOURIST ){
@@ -189,22 +191,32 @@ const updateIntoDB = async (user:IJWTPayload, id:string, payload:any)=>{
     // date chane or cancel booking logic
     const allowedFields = ["title", "description", "tourFee", "durationHours", "maxPeople", "city", "meetingPoint", "categories", "images"];
 
-    Object.keys(payload).forEach(key => {
-            if (!allowedFields.includes(key)) {
-                delete payload[key];
-            }
-        });
+  const updateData: any = {};
 
-    if(Object.keys(payload).length === 0){
+  for (const key of allowedFields) {
+    if (payload[key] !== undefined) {
+      updateData[key] = payload[key];
+    }
+  }
+
+    if(!Object.keys(updateData).length){
         throw new ApiError(httpStatus.BAD_REQUEST,"No valid fields to update");
     }
 
+    if(updateData.categories){
+        updateData.categories = {
+            deleteMany: {},
+            create:updateData.categories.map((category:any) => ({
+                categoryId: category.categoryId
+            }))
+        }
+    }
+
     const updatedTour = await prisma.tour.update({
-        where:{id: id},
-        data:payload,
+        where:{ id},
+        data:updateData,
         include: {
         guide: true,
-        // images: true,
         categories: true
         }
     })

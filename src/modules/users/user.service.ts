@@ -405,99 +405,32 @@ const getMyProfile = async (user: IJWTPayload) => {
         select: {
             id: true,
             email: true,
-            needPasswordChange: true,
+            name: true,
+            phone: true,
             role: true,
-            status: true
+            address: true,
+            image: true,
+            gender: true,
+            bio: true,
+            languages: true,
+            needPasswordChange: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+            profile: user.role === UserRole.GUIDE ? {
+                select: {
+                    experienceYears: true,
+                    expertise: true,
+                    feePerHour: true,
+                    avgRating: true,
+                    availableStatus: true,
+                    verificationStatus: true,
+                    adminNote: true
+                }
+            } : false
         }
     })
-    let profileData;
-    if (userInfo.role === UserRole.TOURIST) {
-        profileData = await prisma.user.findUniqueOrThrow({
-            where: {
-                email: user.email,
-                status: UserStatus.ACTIVE
-            },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                role: true,
-                address: true,
-                image: true,
-                gender: true,
-                bio: true,
-                languages: true,
-                needPasswordChange: true,
-                status: true,
-                isDeleted: true,
-                createdAt: true,
-                updatedAt: true
-            }
-        })
-    }
-    if (userInfo.role === UserRole.GUIDE) {
-        profileData = await prisma.user.findUniqueOrThrow({
-            where: {
-                email: user.email
-            },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                role: true,
-                gender: true,
-                address: true,
-                image: true,
-                needPasswordChange: true,
-                status: true,
-                isDeleted: true,
-                bio: true,
-                languages: true,
-                createdAt: true,
-                updatedAt: true,
-                profile: {
-                    select: {
-                        experienceYears: true,
-                        avgRating: true,
-                        feePerHour: true,
-                        availableStatus: true,
-                        verificationStatus: true,
-                        adminNote: true
-                    }
-                }
-            }
-        })
-    }
-    if (userInfo.role === UserRole.ADMIN) {
-        profileData = await prisma.user.findUniqueOrThrow({
-            where: {
-                email: user.email
-            },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                role: true,
-                address: true,
-                gender: true,
-                bio: true,
-                languages: true,
-                image: true,
-                needPasswordChange: true,
-                status: true,
-                isDeleted: true,
-                createdAt: true,
-                updatedAt: true
-            }
-        })
-    }
-    return {
-        ...userInfo,
-        ...profileData
-    }
+    return userInfo
 }
 
 const getSingleByIdFromDB = async (user: IJWTPayload, id: string) => {
@@ -544,7 +477,8 @@ const updateMyProfie = async (user: IJWTPayload, req: Request) => {
     const currentUserInfo = await prisma.user.findUniqueOrThrow({
         where: {
             email: user?.email
-        }
+        },
+        include: { profile: true }
     });
 
     let imageUrl = currentUserInfo.image;
@@ -553,35 +487,34 @@ const updateMyProfie = async (user: IJWTPayload, req: Request) => {
         imageUrl = typeof upload === "string" ? upload : Array.isArray(upload) ? upload[0] : imageUrl;
 
     }
+    const payload = req.body.data ? JSON.parse(req.body.data) : req.body;
+    const { profile, ...userData } = payload;
 
-    const body = req.body;
-    if (currentUserInfo.role === UserRole.TOURIST || currentUserInfo.role === UserRole.ADMIN) {
-        const updated = await prisma.user.update({
-            where: { id: currentUserInfo.id },
-            data: {
-                ...body, image: imageUrl
-            }
-
-        })
-        return updated;
-    }
-    // Guide
-    if (currentUserInfo.role === UserRole.GUIDE) {
-        const { profile, ...userData } = body;
-        const updated = await prisma.user.update({
-            where: { id: currentUserInfo.id },
-            data: {
-                ...userData, image: imageUrl,
-                profile: {
+    const updated = await prisma.user.update({
+        where: { id: currentUserInfo.id },
+        data: {
+            name: userData.name,
+            phone: userData.phone,
+            address: userData.address,
+            bio: userData.bio,
+            languages: Array.isArray(userData.languages)
+                ? userData.languages
+                : (userData.languages?.toString().split(",").map((l: string) => l.trim()) || []),
+            gender: userData.gender,
+            image: imageUrl,
+            profile: profile
+                ? {
                     update: {
-                        ...profile
-                    }
+                        expertise: profile.expertise ?? "",
+                        experienceYears: profile.experienceYears ?? null,
+                        feePerHour: profile.feePerHour ?? null,
+                    },
                 }
-            }
-        })
-        return updated;
-    }
-    throw new ApiError(httpStatus.BAD_REQUEST, "Unable to update profile")
+                : undefined,
+        },
+    });
+
+    return updated;
 }
 
 

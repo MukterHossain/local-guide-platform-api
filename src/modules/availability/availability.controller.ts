@@ -38,6 +38,22 @@ const getAllFromDB = catchAsync (async (req:Request, res:Response) =>{
         data: result.data
     })
 })
+const getMyAvailability = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
+    
+    const filters = pick(req.query, availabilityFilterableFields) 
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
+
+    const result = await AvailabilityService.getMyAvailability(filters, options, req.user as IJWTPayload);
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Availability fetched successfully",
+        meta: result.meta,
+        data: result.data
+    })
+})
 const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
    const {id} = req.params; 
   
@@ -90,6 +106,7 @@ const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
 export const AvailabilityController = {
     inserIntoDB,
     getAllFromDB,
+    getMyAvailability,
     getSingleByIdFromDB,
     updateIntoDB,
     deleteFromDB

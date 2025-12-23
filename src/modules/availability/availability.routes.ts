@@ -15,6 +15,7 @@ const router = express.Router();
 
 
 router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE), AvailabilityController.getAllFromDB)
+router.get("/me", auth(UserRole.ADMIN, UserRole.GUIDE), AvailabilityController.getMyAvailability)
 
 router.get("/:id",
     auth(UserRole.GUIDE, UserRole.ADMIN),
@@ -32,7 +33,7 @@ router.patch("/:id",
     AvailabilityController.updateIntoDB
     )
 router.delete("/:id",
-    auth(UserRole.ADMIN), AvailabilityController.deleteFromDB
+    auth(UserRole.ADMIN, UserRole.GUIDE), AvailabilityController.deleteFromDB
     )
 
 

@@ -45,32 +45,22 @@ const createAdminValidation = z.object({
   role: z.enum(["ADMIN"]), 
 });
 
-const updateTouristAdminSchema = z.object({
+const updateUserSchema = z.object({
   name: z.string().optional(),
   phone: z.string().optional(),
   image: z.string().optional(),
   address: z.string().optional(),
   bio: z.string().optional(),
   languages: z.array(z.string()).optional(),
-});
-
-const updateGuideProfileSchema = z.object({
-   name: z.string().optional(),
-    phone: z.string().optional(),
-    image: z.string().optional(),
-    address: z.string().optional(),
-    bio: z.string().optional(),
-    languages: z.array(z.string()).optional(),
-    role: z.enum(["TOURIST", "GUIDE"]).default("TOURIST").optional(),
-
-  profile: z.object({
+    profile: z.object({
     expertise: z.string().optional(),
     experienceYears: z.number().optional(),
-    locationId: z.string().optional(),
-    availableStatus: z.boolean().optional(),
     feePerHour: z.number().optional(),
   }).optional()
+
 });
+
+
 
 
 
@@ -85,7 +75,6 @@ export const userValidation = {
     profileValidation,
     createUserValidation,
     createAdminValidation,
-    updateTouristAdminSchema,
-    updateGuideProfileSchema,
+    updateUserSchema,
     adminUpdateGuideStatus
 };
