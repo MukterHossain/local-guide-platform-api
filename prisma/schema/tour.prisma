@@ -9,8 +9,12 @@ model Tour {
     tourFee       Float
     maxPeople     Int
     meetingPoint  String?
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
+
+    status    TourStatus @default(PUBLISHED)
+    isDeleted Boolean    @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     guide      User           @relation("GuideTours", fields: [guideId], references: [id], onDelete: Cascade)
     bookings   Booking[]      @relation("TourBookings")
@@ -27,7 +31,7 @@ model Booking {
     availabilityId String
     bookingDate    DateTime
     status         BookingStatus @default(PENDING)
-    totalFee     Float
+    totalFee       Float
     paymentStatus  PaymentStatus @default(UNPAID)
     createdAt      DateTime      @default(now())
     updatedAt      DateTime      @updatedAt

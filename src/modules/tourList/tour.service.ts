@@ -6,70 +6,73 @@ import { tourSearchableFields } from "./tour.constant";
 import { fileUploader } from "../../helper/fileUploader";
 import httpStatus from "http-status";
 import ApiError from "../../error/ApiError";
-const inserIntoDB = async (user:IJWTPayload,  tourData: any, files: Express.Multer.File[])=>{
-    if(user.role !== UserRole.GUIDE){    
-        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Guide can create tours");
+const inserIntoDB = async (user: IJWTPayload, tourData: any, files: Express.Multer.File[]) => {
+    if (user.role !== UserRole.GUIDE) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Only Guide can create tours");
     }
 
     const isExist = await prisma.tour.findFirst({
-        where:{
+        where: {
             title: tourData.title,
             city: tourData.city,
             guideId: user.id
         }
     })
 
-    if(isExist){
-        throw new ApiError(httpStatus.BAD_REQUEST,"Tour already created. Please modify data.");
+    if (isExist) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Tour already created. Please modify data.");
     }
     // const files = req.files as Express.Multer.File[];
-              if (files && files.length > 0) {
-        const imageUrls = await fileUploader.uploadToCloudinary(files); 
-        tourData.images = imageUrls; 
+    if (files && files.length > 0) {
+        const imageUrls = await fileUploader.uploadToCloudinary(files);
+        tourData.images = imageUrls;
     }
     const tour = await prisma.tour.create({
         data: {
             ...tourData,
             guideId: user.id
         }
-        
+
     });
     console.log("bookingData", tour)
-     
+
     return tour
 }
 
-const getAllFromDB =async(params:any, options: IOptions)=>{
- 
+const getAllFromDB = async (params: any, options: IOptions) => {
+
     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
     const { searchTerm, ...filterData } = params;
 
-    const andConditions: Prisma.TourWhereInput[] = [];
-    
-        if (searchTerm) {
-            andConditions.push({
-                OR: tourSearchableFields.map(field => ({
-                    [field]: {
-                        contains: searchTerm,
-                        mode: "insensitive"
-                    }
-                }))
-            })
-        }
-    
-        if (Object.keys(filterData).length > 0) {
-            andConditions.push({
-                AND: Object.keys(filterData).map(key => ({
-                    [key]: {
-                        equals: (filterData as any)[key]
-                    }
-                }))
-            })
-        }
-    
-        const whereConditions: Prisma.TourWhereInput = andConditions.length > 0 ? {
-            AND: andConditions
-        } : {}
+    const andConditions: Prisma.TourWhereInput[] = [
+        { status: "PUBLISHED" },
+        { isDeleted: false },
+    ];
+
+    if (searchTerm) {
+        andConditions.push({
+            OR: tourSearchableFields.map(field => ({
+                [field]: {
+                    contains: searchTerm,
+                    mode: "insensitive"
+                }
+            }))
+        })
+    }
+
+    if (Object.keys(filterData).length > 0) {
+        andConditions.push({
+            AND: Object.keys(filterData).map(key => ({
+                [key]: {
+                    equals: (filterData as any)[key]
+                }
+            }))
+        })
+    }
+
+    const whereConditions: Prisma.TourWhereInput = andConditions.length > 0 ? {
+        AND: andConditions
+    } : {}
     const tours = await prisma.tour.findMany({
         where: whereConditions,
         skip: skip,
@@ -77,7 +80,99 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
         orderBy: {
             [sortBy]: sortOrder
         },
+        select: {
+            id: true,
+            title: true,
+            city: true,
+            description: true,
+            tourFee: true,
+            durationHours: true,
+            images: true,
+            status: true,
+            maxPeople: true,
+            createdAt: true,
+            updatedAt: true,
+
+            guide: {
+                select: {
+                    id: true,
+                    name: true,
+                    role: true,
+                    status: true,
+                    languages: true,
+                    image: true,
+                    createdAt: true,
+                    updatedAt: true
+                }
+            }
+        },
+    })
+    const total = await prisma.tour.count({
+        where: whereConditions
+    })
+    return {
+        meta: {
+            page,
+            limit,
+            total
+        },
+        data: tours
+    }
+}
+const getSingleByIdFromDB = async (user: IJWTPayload, id: string) => {
+    const tour = await prisma.tour.findUniqueOrThrow({
+        where: { id: id },
         include: {
+            guide: {
+                select: {
+                    d: true,
+                    name: true,
+                    role: true,
+                    status: true,
+                    languages: true,
+                    image: true,
+                    createdAt: true,
+                    updatedAt: true
+                }
+            }
+        }
+    })
+
+    if (!tour) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Tour not found");
+    }
+
+    if (user.role === UserRole.ADMIN) {
+        return tour
+    }
+    if (user.role === UserRole.TOURIST) {
+        return tour
+    }
+
+    if (user.role === UserRole.GUIDE && tour.guideId !== user.id) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized to view this booking");
+    }
+
+    return tour
+}
+const getPublicById = async (id: string) => {
+    const tour = await prisma.tour.findUniqueOrThrow({
+        where: {
+            id,
+            status: "PUBLISHED",
+            isDeleted: false,
+        },
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            city: true,
+            durationHours: true,
+            images: true,
+            tourFee: true,
+            maxPeople: true,
+            meetingPoint: true,
+
             guide: {
                 select: {
                     id: true,
@@ -85,80 +180,46 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
                     name: true,
                     role: true,
                     status: true,
-                    languages: true,
                     phone: true,
                     address: true,
                     image: true,
                     createdAt: true,
                     updatedAt: true
                 }
-            }
+            },
+            reviews: {
+                select: {
+                    rating: true,
+                },
+            },
         }
-    })
-    const total = await prisma.tour.count({
-        where: whereConditions
-    })
-    return {
-        meta:{
-        page,
-        limit,
-        total
-    }, 
-    data:tours}
-}
-const getSingleByIdFromDB = async (user:IJWTPayload, id:string)=>{
-    const tour = await prisma.tour.findUniqueOrThrow({
-        where:{id: id},
-        include: {
-            guide: {
-                select: {    
-                    id: true,
-                    email: true,
-                    name: true,
-                    role: true,
-                    status: true,
-                    phone: true,
-                    address: true,                    
-                    image: true,
-                    createdAt: true,
-                    updatedAt: true
-                }
-            }
-        }   
-    })
+    }
+    )
+    const avgRating =
+        tour.reviews.reduce((a, b) => a + b.rating, 0) /
+        (tour.reviews.length || 1)
 
-    if(!tour){
-        throw new ApiError(httpStatus.NOT_FOUND,"Tour not found");
+    return {
+        ...tour,
+        avgRating,
+        reviewCount: tour.reviews.length,
     }
-    
-    if(user.role === UserRole.ADMIN){
-        return tour
-    }
-    if(user.role === UserRole.TOURIST){
-        return tour
-    }
-    
-    if(user.role === UserRole.GUIDE && tour.guideId !== user.id){
-        throw new ApiError(httpStatus.UNAUTHORIZED,"You are not authorized to view this booking");
-    }
-     
-    return tour
 }
 
 const getMyTours = async (user: IJWTPayload) => {
-    if(user.role !== UserRole.ADMIN && user.role !== UserRole.GUIDE){
-        throw new ApiError(httpStatus.UNAUTHORIZED,"Only Tourist can view their bookings");
+    if (user.role !== UserRole.ADMIN && user.role !== UserRole.GUIDE) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Only Tourist can view their bookings");
     }
     if (user.role === UserRole.GUIDE) {
-    return prisma.tour.findMany({
-        where: {
-            guideId: user.id
-        },
-        include: {
-            guide: true
-        }
-    });
-}
+        return prisma.tour.findMany({
+            where: {
+                guideId: user.id
+            },
+            include: {
+                guide: true
+            }
+        });
+    }
     const bookings = await prisma.tour.findMany({
         where: {
             guideId: user.id
@@ -170,66 +231,66 @@ const getMyTours = async (user: IJWTPayload) => {
             createdAt: "desc"
         }
     })
-    
-    
-      return bookings
+
+
+    return bookings
 }
 
-const updateIntoDB = async (user:IJWTPayload, id:string, payload:any)=>{
-    
+const updateIntoDB = async (user: IJWTPayload, id: string, payload: any) => {
+
     const existingBooking = await prisma.tour.findUniqueOrThrow({
-        where:{id}
+        where: { id }
     })
 
-    if(user.role === UserRole.TOURIST ){
-        throw new ApiError(httpStatus.UNAUTHORIZED,"Tourist are not allowed to update tour");
+    if (user.role === UserRole.TOURIST) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Tourist are not allowed to update tour");
     }
 
-    if(user.role === UserRole.GUIDE && existingBooking.guideId !== user.id){
-        throw new ApiError(httpStatus.UNAUTHORIZED,"You are not authorized to update this tour");
+    if (user.role === UserRole.GUIDE && existingBooking.guideId !== user.id) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized to update this tour");
     }
     // date chane or cancel booking logic
     const allowedFields = ["title", "description", "tourFee", "durationHours", "maxPeople", "city", "meetingPoint", "categories", "images"];
 
-  const updateData: any = {};
+    const updateData: any = {};
 
-  for (const key of allowedFields) {
-    if (payload[key] !== undefined) {
-      updateData[key] = payload[key];
-    }
-  }
-
-    if(!Object.keys(updateData).length){
-        throw new ApiError(httpStatus.BAD_REQUEST,"No valid fields to update");
+    for (const key of allowedFields) {
+        if (payload[key] !== undefined) {
+            updateData[key] = payload[key];
+        }
     }
 
-    if(updateData.categories){
+    if (!Object.keys(updateData).length) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "No valid fields to update");
+    }
+
+    if (updateData.categories) {
         updateData.categories = {
             deleteMany: {},
-            create:updateData.categories.map((category:any) => ({
+            create: updateData.categories.map((category: any) => ({
                 categoryId: category.categoryId
             }))
         }
     }
 
     const updatedTour = await prisma.tour.update({
-        where:{ id},
-        data:updateData,
+        where: { id },
+        data: updateData,
         include: {
-        guide: true,
-        categories: true
+            guide: true,
+            categories: true
         }
     })
-    
-     
-    return  updatedTour
+
+
+    return updatedTour
 }
-const deleteFromDB = async (id:string)=>{
+const deleteFromDB = async (id: string) => {
     const result = await prisma.tour.delete({
-        where:{id: id}
+        where: { id: id }
     })
-    return result   
-    
+    return result
+
 }
 
 
@@ -245,6 +306,7 @@ export const TourService = {
     inserIntoDB,
     getAllFromDB,
     getSingleByIdFromDB,
+    getPublicById,
     getMyTours,
     updateIntoDB,
     deleteFromDB

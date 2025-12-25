@@ -34,7 +34,7 @@ const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
         success: true,
         message: "Tours fetched successfully",
         meta: result.meta,
-        data: result.data
+        data: result.data ?? []
     })
 })
 const getSingleByIdFromDB = catchAsync(async (req: Request & { user?: IJWTPayload }, res: Response) => {
@@ -47,6 +47,18 @@ const getSingleByIdFromDB = catchAsync(async (req: Request & { user?: IJWTPayloa
         statusCode: httpStatus.OK,
         success: true,
         message: "Tours fetched successfully",
+        data: result
+    })
+})
+const getPublicById = catchAsync(async (req: Request , res: Response) => {
+    const { id } = req.params;
+
+    const result = await TourService.getPublicById( id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Tours by id fetched successfully",
         data: result
     })
 })
@@ -140,6 +152,7 @@ export const TourController = {
     inserIntoDB,
     getAllFromDB,
     getSingleByIdFromDB,
+    getPublicById,
     getMyTours,
     updateIntoDB,
     deleteFromDB

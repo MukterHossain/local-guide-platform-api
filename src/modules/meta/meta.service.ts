@@ -1,4 +1,4 @@
-import { PaymentStatus, UserRole } from "@prisma/client";
+import { GuideVerificationStatus, PaymentStatus, UserRole } from "@prisma/client";
 import { IJWTPayload } from "../../types/common";
 import httpStatus from 'http-status'
 
@@ -54,6 +54,25 @@ const getGuideMetaData = async (user: IJWTPayload) => {
         }
     });
 
+    const avgRating = await prisma.review.aggregate({
+        _avg: {
+            rating: true
+        },
+        where: {
+            guideId: userDatafind.id
+        }
+    });
+
+    const popularTour = await prisma.booking.groupBy({
+        by: ['tourId'],
+        _count: {
+            id: true
+        },
+        where: { tour: { guideId: userDatafind.id }},
+        orderBy: {_count: {id: "desc"}},
+        take: 1
+    })
+
     const totalRevenue = await prisma.payment.aggregate({
         _sum: {
             amount: true
@@ -76,16 +95,19 @@ const getGuideMetaData = async (user: IJWTPayload) => {
         }
     });
 
-    const formattedBookingStatusDistribution = bookingStatusDistribution.map(({ status, _count }) => ({
+    const formatedBookingStatusDistribution = bookingStatusDistribution.map(({ status, _count }) => ({
         status,
         count: Number(_count.id)
     }))
 
+
     return {
         bookingCount,
-        formattedBookingStatusDistribution,
+        formatedBookingStatusDistribution,
         reviewCount,
         touristCount: touristCount.length,
+        avgRating: avgRating._avg.rating,
+        popularTour: popularTour[0],
         totalRevenue,
     }
 }
@@ -124,16 +146,36 @@ const getTouristMetaData = async (user: IJWTPayload) => {
         }
     });
 
-    const formattedBookingStatusDistribution = bookingStatusDistribution.map(({ status, _count }) => ({
+    const formatedBookingStatusDistribution = bookingStatusDistribution.map(({ status, _count }) => ({
         status,
         count: Number(_count.id)
     }))
+
+    const upcomingBookings = await prisma.booking.count({
+        where: {
+            userId: userData.id,
+            status: "CONFIRMED",
+            createdAt: {
+                gte: new Date()
+            }
+        }
+    })
+
+    const totalSpent = await prisma.payment.aggregate({
+        _sum: {amount: true},
+        where: {
+            booking: {userId: userData.id},
+            status: PaymentStatus.PAID
+        }
+    })
 
     return {
         bookingCount,
         reviewCount,
         paymentCount,
-        formattedBookingStatusDistribution
+        formatedBookingStatusDistribution,
+        upcomingBookings,
+        totalSpent
     }
 }
 
@@ -147,9 +189,6 @@ const touristCount = await prisma.user.count({
     where: { role: UserRole.TOURIST }
 });
 
-const adminCount = await prisma.user.count({
-    where: { role: UserRole.ADMIN }
-});
     const bookingtCount = await prisma.booking.count()
     const paymentCount = await prisma.payment.count()
 
@@ -162,6 +201,71 @@ const adminCount = await prisma.user.count({
         }
     })
 
+    
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+    
+   const bookingTrend =  await prisma.booking.groupBy({
+        by: ['createdAt'],
+        _count: { id: true },
+        where: {
+            createdAt: {
+                gte: startOfMonth,
+                lte: endOfMonth
+            }
+        }
+    });
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    
+    const todyBookings = await prisma.booking.count({
+        where: {
+            createdAt: {
+                gte: startOfToday,
+                lte: endOfToday
+            }
+        }
+    })
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0, 0);
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999);
+    
+    const yesterdayBookings = await prisma.booking.count({
+        where: {
+            createdAt: {
+                gte: startOfYesterday,
+                lte: endOfYesterday
+            }
+        }
+    })
+    let bookingGrowth = 0;
+    if(yesterdayBookings === 0 && todyBookings > 0){
+        bookingGrowth = 100
+    }else if(yesterdayBookings > 0){
+        bookingGrowth = ((todyBookings - yesterdayBookings) / yesterdayBookings) * 100
+    }
+
+    const pendingGuideVerification = await prisma.user.count({
+        where: {
+            role: UserRole.GUIDE,
+            profile: {
+                verificationStatus: GuideVerificationStatus.PENDING
+            }
+        }
+    })
+
+     const unpaidTourist = await prisma.payment.count({
+        where:{
+            status: PaymentStatus.UNPAID
+        }
+    })
+
+
     const barChartData = await getBarChartData();
     const pieChartData = await getPieChartData();
 
@@ -169,14 +273,19 @@ const adminCount = await prisma.user.count({
         guideCount,
         touristCount,
         bookingtCount,
-        adminCount,
         paymentCount,
         totalRevenue,
+        bookingTrend,
+        bookingGrowth,
+        pendingGuideVerification,
+        unpaidTourist,
         barChartData,
         pieChartData
     }
 
 }
+
+
 
 
 const getBarChartData = async () => {

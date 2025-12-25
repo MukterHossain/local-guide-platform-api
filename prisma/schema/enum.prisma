@@ -34,3 +34,9 @@ enum GuideVerificationStatus {
   VERIFIED
   REJECTED
 }
+
+enum TourStatus {
+  DRAFT
+  PUBLISHED
+  BLOCKED
+}

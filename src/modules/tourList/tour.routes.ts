@@ -21,8 +21,13 @@ router.get("/me",
 router.get("/:id",
     auth(UserRole.ADMIN, UserRole.GUIDE , UserRole.TOURIST),
     TourController.getSingleByIdFromDB)
+router.get("/public/:id",
+    // auth(UserRole.ADMIN, UserRole.GUIDE , UserRole.TOURIST),
+    TourController.getPublicById)
 
-router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), TourController.getAllFromDB)
+router.get("/", 
+  // auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), 
+  TourController.getAllFromDB)
 
 router.post(
   "/",
