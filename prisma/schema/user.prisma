@@ -25,6 +25,7 @@ model User {
     wishlist       Wishlist[]
     reportsFiled   Report[]        @relation("ReportReporter")
     reportsAgainst Report[]        @relation("ReportGuide")
+    report Report[]        @relation("ReportAdmin")
     availabilities Availability[]
 
     @@map("users")

@@ -10,6 +10,8 @@ import { IJWTPayload } from '../../types/common';
 import sendResponse from '../../shared/sendResponse';
 import { TourService } from './tour.service';
 import httpStatus from 'http-status'
+import { tourCreateValidation, tourUpdateValidation } from './tour.validation';
+import ApiError from '../../error/ApiError';
 
 const router = express.Router();
 
@@ -39,9 +41,18 @@ router.post(
       bodyData = JSON.parse(req.body.data);
     }
 
+    const validation = tourCreateValidation.safeParse(bodyData);
+    if(!validation.success){
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Validation failed",
+        JSON.stringify(validation.error.flatten())
+      );
+    }
+
 const result = await TourService.inserIntoDB(
       req.user!,
-      bodyData,
+      validation.data,
       req.files as Express.Multer.File[]
     );
     sendResponse(res, {

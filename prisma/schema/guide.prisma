@@ -30,18 +30,24 @@ model Wishlist {
 }
 
 model Report {
-    id         String   @id @default(cuid())
+    id         String  @id @default(cuid())
     reporterId String
     guideId    String
     reason     String
     details    String?
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
+
+    status ReportStatus @default(PENDING)
+
+    adminId   String?
+    adminNote String?
+
+    resolvedAt DateTime?
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
 
     reporter User @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
     guide    User @relation("ReportGuide", fields: [guideId], references: [id], onDelete: Cascade)
+    admin    User? @relation("ReportAdmin", fields: [adminId], references: [id])
 
     @@map("reports")
 }
-
-

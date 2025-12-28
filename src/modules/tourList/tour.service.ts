@@ -10,6 +10,19 @@ const inserIntoDB = async (user: IJWTPayload, tourData: any, files: Express.Mult
     if (user.role !== UserRole.GUIDE) {
         throw new ApiError(httpStatus.UNAUTHORIZED, "Only Guide can create tours");
     }
+    const findGuideStatus = await prisma.user.findUnique({
+        where: {
+            id: user.id,
+            profile: {
+                verificationStatus: "VERIFIED"
+            }
+        },
+
+    })
+
+    if (!findGuideStatus) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Guide profile is not verified");
+    }
 
     const isExist = await prisma.tour.findFirst({
         where: {
@@ -29,8 +42,23 @@ const inserIntoDB = async (user: IJWTPayload, tourData: any, files: Express.Mult
     }
     const tour = await prisma.tour.create({
         data: {
-            ...tourData,
-            guideId: user.id
+            title: tourData.title,
+            description: tourData.description,
+            city: tourData.city,
+            durationHours: tourData.durationHours,
+            tourFee: tourData.tourFee,
+            maxPeople: tourData.maxPeople,
+            meetingPoint: tourData.meetingPoint,
+            images: tourData.images,
+            guideId: user.id,
+            categories: {
+                create: tourData.categories.map((cat: any) => ({
+                    categoryId: cat.categoryId
+                }))
+            }
+        },
+        include: {
+            categories: { include: { category: true } }
         }
 
     });
@@ -47,6 +75,9 @@ const getAllFromDB = async (params: any, options: IOptions) => {
     const andConditions: Prisma.TourWhereInput[] = [
         { status: "PUBLISHED" },
         { isDeleted: false },
+        
+        // desc 
+          
     ];
 
     if (searchTerm) {
@@ -125,7 +156,7 @@ const getSingleByIdFromDB = async (user: IJWTPayload, id: string) => {
         include: {
             guide: {
                 select: {
-                    d: true,
+                    id: true,
                     name: true,
                     role: true,
                     status: true,
@@ -172,6 +203,7 @@ const getPublicById = async (id: string) => {
             tourFee: true,
             maxPeople: true,
             meetingPoint: true,
+            // categories : true,
 
             guide: {
                 select: {
@@ -192,6 +224,16 @@ const getPublicById = async (id: string) => {
                     rating: true,
                 },
             },
+            categories: {
+                select: {
+                    category: {
+                        select: {
+                            id: true,
+                            name: true,
+                        }
+                    }
+                }
+            }
         }
     }
     )
@@ -203,6 +245,7 @@ const getPublicById = async (id: string) => {
         ...tour,
         avgRating,
         reviewCount: tour.reviews.length,
+        categories: tour.categories.map(c => c.category)
     }
 }
 
@@ -250,7 +293,7 @@ const updateIntoDB = async (user: IJWTPayload, id: string, payload: any) => {
         throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized to update this tour");
     }
     // date chane or cancel booking logic
-    const allowedFields = ["title", "description", "tourFee", "durationHours", "maxPeople", "city", "meetingPoint", "categories", "images"];
+    const allowedFields = ["title", "description", "tourFee", "durationHours", "maxPeople", "city", "meetingPoint", "images"];
 
     const updateData: any = {};
 
@@ -260,30 +303,40 @@ const updateIntoDB = async (user: IJWTPayload, id: string, payload: any) => {
         }
     }
 
-    if (!Object.keys(updateData).length) {
+    if (!Object.keys(updateData).length && !payload.categories) {
         throw new ApiError(httpStatus.BAD_REQUEST, "No valid fields to update");
     }
+    const updatedTour = await prisma.$transaction(async (tx) => {
 
-    if (updateData.categories) {
-        updateData.categories = {
-            deleteMany: {},
-            create: updateData.categories.map((category: any) => ({
-                categoryId: category.categoryId
-            }))
-        }
-    }
+        if (payload.categories) {
+            await tx.tourCategory.deleteMany({
+                where: { tourId: id }
+            })
 
-    const updatedTour = await prisma.tour.update({
-        where: { id },
-        data: updateData,
-        include: {
-            guide: true,
-            categories: true
+            await tx.tourCategory.createMany({
+                data: payload.categories.map((category: any) => ({
+                    tourId: id,
+                    categoryId: category.categoryId
+                }))
+            })
         }
+
+        return tx.tour.update({
+            where: { id },
+            data: updateData,
+            include: {
+                guide: true,
+                categories: {
+                    include: {
+                        category: true
+                    }
+                }
+            }
+        })
     })
 
-
     return updatedTour
+
 }
 const deleteFromDB = async (id: string) => {
     const result = await prisma.tour.delete({

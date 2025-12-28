@@ -40,3 +40,10 @@ enum TourStatus {
   PUBLISHED
   BLOCKED
 }
+
+enum ReportStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  RESOLVED
+}

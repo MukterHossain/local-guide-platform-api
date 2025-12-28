@@ -50,10 +50,10 @@ const getSingleByIdFromDB = catchAsync(async (req: Request & { user?: IJWTPayloa
         data: result
     })
 })
-const getPublicById = catchAsync(async (req: Request , res: Response) => {
+const getPublicById = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    const result = await TourService.getPublicById( id);
+    const result = await TourService.getPublicById(id);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -78,44 +78,38 @@ const updateIntoDB = catchAsync(async (req: Request & { user?: IJWTPayload }, re
     const user = req.user
     const id = req.params.id;
 
-    let payload: any = {};
+    let payload: any = req.body;
     if (typeof req.body.data === "string") {
         payload = JSON.parse(req.body.data);
     }
 
     const validation = tourUpdateValidation.safeParse(payload);
-  if (!validation.success) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      "Validation failed",
-      JSON.stringify(validation.error.flatten())
-    );
-  }
+    if (!validation.success) {
+        throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            "Validation failed",
+            JSON.stringify(validation.error.flatten())
+        );
+    }
 
-  payload = validation.data;
+    payload = validation.data;
     // image upload
-     const files = req.files as Express.Multer.File[] | undefined;
-     let uploadedImages: string[] = [];
+    const files = req.files as Express.Multer.File[] | undefined;
+    let uploadedImages: string[] = [];
 
-    if (files && files.length > 0) {
-      const result = await fileUploader.uploadToCloudinary(files);
-      uploadedImages = Array.isArray(result) ? result : [result];
+    if (files && files?.length > 0) {
+        const result = await fileUploader.uploadToCloudinary(files);
+        uploadedImages = Array.isArray(result) ? result : [result];
     }
-    
 
-    if((payload.images && payload.images.length > 0) || uploadedImages.length > 0){
-    const existingImages = Array.isArray(payload.images)
-      ? payload.images
-      : [];
 
-      payload.images = [...existingImages, ...uploadedImages];
+    if (payload?.images.length || uploadedImages.length) {
+        payload.images = [...(payload.images ?? []), ...uploadedImages];
     }
-    else{
-        delete payload.images;
+    else {
+        payload.images = undefined;
     }
-    
 
-    
 
     const result = await TourService.updateIntoDB(user as IJWTPayload, id, payload);
     console.log("result", result);
