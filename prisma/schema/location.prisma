@@ -8,6 +8,8 @@ model Location {
     guideLocations GuideLocation[]
     profiles Profile[]
 
+
+    @@unique([city, country])
     @@map("locations")
 }
 

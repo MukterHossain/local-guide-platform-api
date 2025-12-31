@@ -90,7 +90,7 @@ const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "Category deleted successfully",
+        message: "Availability deleted successfully",
         data: null
     })
 })

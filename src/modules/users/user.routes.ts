@@ -15,8 +15,8 @@ router.get("/me",
     auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
     UserController.getMyProfile)
 router.get("/", auth(UserRole.ADMIN), UserController.getAllFromDB)
-router.get("/guides", auth(UserRole.ADMIN), UserController.getGuidesAllFromDB)
-router.get("/tourists", auth(UserRole.ADMIN), UserController.getTouristsAllFromDB)
+// router.get("/guides",  UserController.getGuidesAllFromDB)
+// router.get("/tourists", auth(UserRole.ADMIN), UserController.getTouristsAllFromDB)
 router.get("/:id", auth(UserRole.ADMIN), UserController.getSingleByIdFromDB)
 
 router.post(
@@ -54,11 +54,18 @@ router.patch("/update-profile",
     auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
     fileUploader.upload.single('file'),
     (req: Request & { user?: IJWTPayload }, res: Response, next: NextFunction) => {
-        req.body = userValidation.updateUserSchema.parse(JSON.parse(req.body.data));
+        req.body = userValidation.updateUserValidation.parse(JSON.parse(req.body.data));
         next()
     },
     UserController.updateMyProfie
 )
+
+router.delete("/:id",
+    auth(UserRole.ADMIN), UserController.deleteFromDB
+    )
+router.delete("/soft/:id",
+    auth(UserRole.ADMIN), UserController.softDeleteFromDB
+    )
 
 
 

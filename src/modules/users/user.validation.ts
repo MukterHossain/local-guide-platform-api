@@ -2,62 +2,53 @@ import { UserStatus } from "@prisma/client";
 import { z } from "zod";
 
 const profileValidation = z.object({
-   experienceYears: z.number().optional(),
-   expertise: z.string().optional(),
-  feePerHour: z.number().optional(),
-  avgRating: z.number().optional(),
-  locationId: z.string().optional().nullable(),
+   image: z.string().optional(),
+  bio: z.string().optional(),
+  languages: z.array(z.string()).optional(),
+  gender: z.enum(["MALE", "FEMALE"]),
+  address: z.string().optional(),
+
+  // Guide only
+  expertise: z.string().optional(),
+  experienceYears: z.number().optional(),
+  dailyRate: z.number().optional(),
+  locationId: z.string().nullable().optional(),
 }).optional();
 
-const createUserValidation = z.object({
-    password: z.string({
-        message: "Password is required",
-    }),
-    name: z.string({
-        message: "Name is required!",
-    }),
-    email: z.string({
-        message: "Email is required!",
-    }),
-    gender: z.enum(["MALE", "FEMALE"]),
-    phone: z.string({
-        message: "Contact Number is required!",
-    }),
-    languages: z.array(z.string()).optional(),
-    image: z.string().optional(),
-     bio: z.string().optional(),
-    address: z.string().optional(),
-     role: z.enum(["TOURIST", "GUIDE"]).default("TOURIST"),
-     profile: profileValidation
-   
+export const touristPreferenceValidation = z.object({
+  interests: z.array(z.string()).optional(),
+  preferredLangs: z.array(z.string()).optional(),
+  travelStyle: z.enum(["CASUAL", "ADVENTURE", "LUXURY"]),
+  groupSize: z.number().optional(),
+  travelPace: z.enum(["SLOW", "MODERATE", "FAST"]).optional(),
+});
+
+
+export const createUserValidation = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  password: z.string().min(6),
+  phone: z.string(),
+  gender: z.enum(["MALE", "FEMALE"]).optional(),
+  role: z.enum(["TOURIST", "GUIDE"]).default("TOURIST"),
+
+  profile: profileValidation.optional(),
 });
 
 const createAdminValidation = z.object({
-  password: z.string({ message: "Password is required" }),
-  name: z.string({ message: "Name is required" }),
-  email: z.string({ message: "Email is required" }),
-  gender: z.enum(["MALE", "FEMALE"]),
-  bio: z.string().optional(),
-  languages: z.array(z.string()).optional(),
-  phone: z.string({ message: "Contact Number is required" }),
-  image: z.string().optional(),
-  address: z.string().optional(),
-  role: z.enum(["ADMIN"]), 
+  name: z.string(),
+  email: z.string().email(),
+  password: z.string().min(6),
+  phone: z.string().optional(),
+  // gender: z.enum(["MALE", "FEMALE"]).optional(), 
 });
 
-const updateUserSchema = z.object({
-  name: z.string().optional(),
+const updateUserValidation = z.object({
+ name: z.string().optional(),
   phone: z.string().optional(),
-  image: z.string().optional(),
-  address: z.string().optional(),
-  bio: z.string().optional(),
-  languages: z.array(z.string()).optional(),
-    profile: z.object({
-    expertise: z.string().optional(),
-    experienceYears: z.number().optional(),
-    feePerHour: z.number().optional(),
-  }).optional()
 
+  profile: profileValidation.optional(),
+  touristPreference: touristPreferenceValidation.optional(),
 });
 
 
@@ -67,14 +58,14 @@ const updateUserSchema = z.object({
 
 const adminUpdateGuideStatus = z.object({
   verificationStatus: z.enum(["PENDING", "VERIFIED", "REJECTED"]).optional(),
+  status: z.enum(["ACTIVE", "PENDING", "BLOCKED", "DELETED"]).optional(),
   adminNote: z.string().optional(),
-  status: z.enum(["ACTIVE", "PENDING", "BLOCKED", "DELETED"]).optional()
 });
 
 export const userValidation = {
     profileValidation,
     createUserValidation,
     createAdminValidation,
-    updateUserSchema,
+    updateUserValidation,
     adminUpdateGuideStatus
 };

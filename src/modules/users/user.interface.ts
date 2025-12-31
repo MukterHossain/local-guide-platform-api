@@ -8,3 +8,10 @@ export interface IUser {
     phone?: string;
     role?: UserRole
 }
+export type CreateAdminInput = {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  gender?: "MALE" | "FEMALE";
+};

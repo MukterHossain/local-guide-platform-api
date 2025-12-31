@@ -47,3 +47,15 @@ enum ReportStatus {
   REJECTED
   RESOLVED
 }
+
+enum TravelStyle {
+  BUDGET
+  STANDARD
+  LUXURY
+}
+
+enum TravelPace {
+  RELAXED
+  MODERATE
+  FAST
+}

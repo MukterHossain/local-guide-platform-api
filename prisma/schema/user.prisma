@@ -4,11 +4,6 @@ model User {
     email              String     @unique
     password           String
     phone              String?
-    image              String?
-    gender              Gender
-    address            String?
-    bio                String?
-    languages          String[] // ["English","Bangla"]
     needPasswordChange Boolean    @default(true)
     role               UserRole   @default(TOURIST)
     isDeleted          Boolean    @default(false)
@@ -16,7 +11,9 @@ model User {
     createdAt          DateTime   @default(now())
     updatedAt          DateTime   @updatedAt
 
-    profile        Profile?
+    profile           Profile?
+    touristPreference TouristPreference?
+
     tours          Tour[]          @relation("GuideTours")
     bookings       Booking[]       @relation("UserBookings")
     reviews        Review[]        @relation("UserReviews")
@@ -25,26 +22,50 @@ model User {
     wishlist       Wishlist[]
     reportsFiled   Report[]        @relation("ReportReporter")
     reportsAgainst Report[]        @relation("ReportGuide")
-    report Report[]        @relation("ReportAdmin")
+    adminReports   Report[]        @relation("ReportAdmin")
     availabilities Availability[]
 
     @@map("users")
 }
 
 model Profile {
-    id                 String                  @id @default(cuid())
-    userId             String                  @unique
+    id     String @id @default(cuid())
+    userId String @unique
+
+    // Common profile fields
+    image     String?
+    bio       String?
+    languages String[]
+    gender    Gender?
+    address   String?
+
+    // Guide-specific fields
     expertise          String?
     experienceYears    Int?
+    dailyRate          Float?
     locationId         String?
     avgRating          Float?                  @default(0)
-    location           Location?               @relation(fields: [locationId], references: [id])
-    feePerHour         Float?
     availableStatus    Boolean                 @default(true)
     verificationStatus GuideVerificationStatus @default(PENDING)
     adminNote          String?
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    location Location? @relation(fields: [locationId], references: [id])
+    user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@map("profiles")
+}
+
+model TouristPreference {
+    id     String @id @default(cuid())
+    userId String @unique
+
+    interests      String[] // ["History", "Food", "Nature"]
+    travelStyle    TravelStyle
+    preferredLangs String[] // ["English", "Bangla"]
+    groupSize      Int?
+    travelPace     TravelPace?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("tourist_preferences")
 }

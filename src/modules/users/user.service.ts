@@ -8,173 +8,159 @@ import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { userSearchableFields } from "./user.constant";
 import httpStatus from "http-status";
 import ApiError from "../../error/ApiError";
+import { CreateAdminInput } from "./user.interface";
+
+
 const createUser = async (req: Request): Promise<UserWithProfile> => {
-    const { role, profile, email, password, name, phone, address, gender } = req.body;
+    const { name, email, password, phone, gender, role, profile } = req.body;
+
     const exists = await prisma.user.findUnique({ where: { email } })
-    if (exists?.role === UserRole.TOURIST) {
+    if (exists) {
         throw new ApiError(httpStatus.BAD_REQUEST, "User already exists")
-    }
-    if (exists?.role === UserRole.GUIDE) {
-        throw new ApiError(httpStatus.BAD_REQUEST, "Guide already exists")
     }
 
     if (role === UserRole.GUIDE && !profile) {
         throw new ApiError(httpStatus.BAD_REQUEST, "Guide profile data is required")
     }
 
-    if (role === UserRole.GUIDE) {
-        if (!profile.experienceYears || !profile.feePerHour) {
-            throw new ApiError(httpStatus.BAD_REQUEST, "Missing guide profile fields.")
-        }
-    }
 
     const hasshedPassword = await bcrypt.hash(req.body.password, 10);
 
 
-    let user = await prisma.user.create({
+    const user = await prisma.user.create({
         data: {
-            name: req.body.name,
-            email: req.body.email,
+            name,
+            email,
             password: hasshedPassword,
-            phone: req.body.phone,
-            gender: req.body.gender,
-            address: req.body.address,
-            bio: req.body.bio,
-            languages: req.body.languages,
-            role: req.body.role as UserRole || UserRole.TOURIST,
-            image: null
+            phone,
+            gender,
+            role,
         },
         select: {
             id: true,
-            name: true,
             email: true,
+            name: true,
             phone: true,
-            role: true,
-            bio: true,
-            languages: true,
-            address: true,
-            image: true,
-            gender: true,
-            needPasswordChange: true,
-            status: true,
-            isDeleted: true,
-            createdAt: true,
-            updatedAt: true
         }
     })
-    if (req.file) {
-        const uploadResult = await fileUploader.uploadToCloudinary(req.file) as string;
-        console.log("uploadResult", uploadResult);
-        // req.body.image = uploadResult?.secure_url
-        user = await prisma.user.update({
-            where: { id: user.id },
-            data: { image: uploadResult },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                role: true,
-                bio: true,
-                languages: true,
-                gender: true,
-                address: true,
-                image: true,
-                needPasswordChange: true,
-                status: true,
-                isDeleted: true,
-                createdAt: true,
-                updatedAt: true
-            }
-        })
-    }
-    let finalUser: UserWithProfile = { ...user };
-    // guide profile
-    if (role === UserRole.GUIDE) {
-        if (!profile) {
-            throw new ApiError(httpStatus.BAD_REQUEST, "Guide profile data is required")
-        }
-        await prisma.profile.create({
+    await prisma.profile.create({
+        data: {
+            userId: user.id,
+            image: profile?.image,
+            bio: profile?.bio,
+            languages: profile?.languages ?? [],
+            gender,
+            address: profile?.address,
+
+            expertise: role === UserRole.GUIDE ? profile?.expertise : undefined,
+            experienceYears:
+                role === UserRole.GUIDE ? profile?.experienceYears : undefined,
+            dailyRate: role === UserRole.GUIDE ? profile?.dailyRate : undefined,
+            locationId: role === UserRole.GUIDE ? profile?.locationId : undefined,
+        },
+    });
+
+    if (role === UserRole.TOURIST) {
+        await prisma.touristPreference.create({
             data: {
                 userId: user.id,
-                expertise: profile.expertise,
-                avgRating: profile.avgRating,
-                experienceYears: profile.experienceYears,
-                feePerHour: profile.feePerHour,
-                locationId: profile.locationId ?? null,
-            }
-        })
-    }
-
-
-    if (role === UserRole.GUIDE) {
-        const guideProfile = await prisma.profile.findUnique({
-            where: {
-                userId: user.id
+                interests: [],
+                preferredLangs: [],
+                travelStyle: "BUDGET",
+                groupSize: 1,
+                travelPace: "RELAXED",
             },
-        })
-        console.log("user", user)
-        finalUser.profile = guideProfile;
+        });
     }
 
-    return finalUser
+    return prisma.user.findUniqueOrThrow({
+        where: { id: user.id },
+        include: {
+            profile: true,
+            touristPreference: true,
+        },
+    });
+
+
+
+    // if (req.file) {
+    //     const uploadResult = await fileUploader.uploadToCloudinary(req.file) as string;
+    //     console.log("uploadResult", uploadResult);
+    //     // req.body.image = uploadResult?.secure_url
+    //     user = await prisma.user.update({
+    //         where: { id: user.id },
+    //         data: { image: uploadResult },
+    //         select: {
+    //             id: true,
+    //             email: true,
+    //             name: true,
+    //             phone: true,
+    //             role: true,
+    //             bio: true,
+    //             languages: true,
+    //             gender: true,
+    //             address: true,
+    //             image: true,
+    //             needPasswordChange: true,
+    //             status: true,
+    //             isDeleted: true,
+    //             createdAt: true,
+    //             updatedAt: true
+    //         }
+    //     })
+    // }
+    // let finalUser: UserWithProfile = { ...user };
+    // // guide profile
+    // if (role === UserRole.GUIDE) {
+    //     if (!profile) {
+    //         throw new ApiError(httpStatus.BAD_REQUEST, "Guide profile data is required")
+    //     }
+    //     await prisma.profile.create({
+    //         data: {
+    //             userId: user.id,
+    //             expertise: profile.expertise,
+    //             avgRating: profile.avgRating,
+    //             experienceYears: profile.experienceYears,
+    //             dailyRate: profile.dailyRate,
+    //             locationId: profile.locationId ?? null,
+    //         }
+    //     })
+    // }
+
+
+    // if (role === UserRole.GUIDE) {
+    //     const guideProfile = await prisma.profile.findUnique({
+    //         where: {
+    //             userId: user.id
+    //         },
+    //     })
+    //     console.log("user", user)
+    //     finalUser.profile = guideProfile;
+    // }
+
+
 }
-const createAdmin = async (req: Request): Promise<UserWithProfile> => {
-    const { email, password, name, phone, address, gender, } = req.body;
-    const exists = await prisma.user.findUnique({ where: { email } })
+const createAdmin = async (payload: CreateAdminInput) => {
+    const exists = await prisma.user.findUnique({ where: { email: payload.email } })
     if (exists) {
         throw new ApiError(httpStatus.BAD_REQUEST, "Admin already exists")
     }
 
-    const hasshedPassword = await bcrypt.hash(req.body.password, 10);
+    const hashedPassword = await bcrypt.hash(payload.password, 10);
 
-    let admin = await prisma.user.create({
+    const admin = await prisma.user.create({
         data: {
-            email, password: hasshedPassword, name, phone, role: "ADMIN", address, gender, image: null
+            ...payload,
+            password: hashedPassword,
+            role: UserRole.ADMIN,
         },
         select: {
             id: true,
-            email: true,
             name: true,
-            phone: true,
+            email: true,
             role: true,
-            address: true,
-            image: true,
-            gender: true,
-            needPasswordChange: true,
-            status: true,
-            isDeleted: true,
-            createdAt: true,
-            updatedAt: true
         }
     })
-    if (req.file) {
-        const uploadResult = await fileUploader.uploadToCloudinary(req.file) as string;
-        console.log("uploadResult", uploadResult);
-        admin = await prisma.user.update({
-            where: { id: admin.id },
-            data: { image: uploadResult },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                role: true,
-                address: true,
-                gender: true,
-                image: true,
-                needPasswordChange: true,
-                status: true,
-                isDeleted: true,
-                createdAt: true,
-                updatedAt: true
-            }
-        })
-    }
-
-
-
-
     return admin as UserWithProfile
 }
 
@@ -229,16 +215,13 @@ const getAllFromDB = async (params: any, options: IOptions) => {
             name: true,
             phone: true,
             role: true,
-            address: true,
-            gender: true,
-            image: true,
             needPasswordChange: true,
             status: true,
             isDeleted: true,
-            avgRating: true,
             createdAt: true,
             updatedAt: true,
-            profile: true
+            profile: true,
+            touristPreference: true
         }
     })
 
@@ -251,150 +234,146 @@ const getAllFromDB = async (params: any, options: IOptions) => {
         data: result
     }
 }
-const getGuidesAllFromDB = async (params: any, options: IOptions) => {
+// const getGuidesAllFromDB = async (params: any, options: IOptions) => {
 
-    const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
-    const { searchTerm, ...filterData } = params;
+//     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
+//     const { searchTerm, ...filterData } = params;
 
-    const andConditions: Prisma.UserWhereInput[] = [];
+//     const andConditions: Prisma.UserWhereInput[] = [];
 
-    if (searchTerm) {
-        andConditions.push({
-            OR: userSearchableFields.map(field => ({
-                [field]: {
-                    contains: searchTerm,
-                    mode: "insensitive"
-                }
-            }))
-        })
-    }
+//     if (searchTerm) {
+//         andConditions.push({
+//             OR: userSearchableFields.map(field => ({
+//                 [field]: {
+//                     contains: searchTerm,
+//                     mode: "insensitive"
+//                 }
+//             }))
+//         })
+//     }
 
-    if (Object.keys(filterData).length > 0) {
-        andConditions.push({
-            AND: Object.keys(filterData).map(key => ({
-                [key]: {
-                    equals: (filterData as any)[key]
-                }
-            }))
-        })
-    }
-    andConditions.push({ role: "GUIDE" });
+//     if (Object.keys(filterData).length > 0) {
+//         andConditions.push({
+//             AND: Object.keys(filterData).map(key => ({
+//                 [key]: {
+//                     equals: (filterData as any)[key]
+//                 }
+//             }))
+//         })
+//     }
+//     andConditions.push({ role: "GUIDE" });
 
-    const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? {
-        AND: andConditions
-    } : {}
-    const total = await prisma.user.count({
-        where: whereConditions
-    })
-    const result = await prisma.user.findMany({
-        skip,
-        take: Number(limit),
-        orderBy: {
-            [sortBy]: sortOrder
-        },
-        where: {
-            AND: andConditions,
+//     const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? {
+//         AND: andConditions
+//     } : {}
+//     const total = await prisma.user.count({
+//         where: whereConditions
+//     })
+//     const result = await prisma.user.findMany({
+//         skip,
+//         take: Number(limit),
+//         orderBy: {
+//             [sortBy]: sortOrder
+//         },
+//         where: {
+//             AND: andConditions,
 
-        },
-        select: {
-            id: true,
-            email: true,
-            name: true,
-            phone: true,
-            role: true,
-            address: true,
-            gender: true,
-            image: true,
-            needPasswordChange: true,
-            status: true,
-            isDeleted: true,
-            createdAt: true,
-            updatedAt: true,
-            profile: true
-        }
-    })
+//         },
+//         select: {
+//             id: true,
+//             email: true,
+//             name: true,
+//             phone: true,
+//             role: true,
+//             needPasswordChange: true,
+//             status: true,
+//             isDeleted: true,
+//             createdAt: true,
+//             updatedAt: true,
+//             profile: true,
+//             touristPreference: true
+//         }
+//     })
 
-    return {
-        meta: {
-            total,
-            page,
-            limit
-        },
-        data: result
-    }
-}
-const getTouristsAllFromDB = async (params: any, options: IOptions) => {
+//     return {
+//         meta: {
+//             total,
+//             page,
+//             limit
+//         },
+//         data: result
+//     }
+// }
+// const getTouristsAllFromDB = async (params: any, options: IOptions) => {
 
-    const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
-    const { searchTerm, ...filterData } = params;
+//     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
+//     const { searchTerm, ...filterData } = params;
 
-    const andConditions: Prisma.UserWhereInput[] = [];
+//     const andConditions: Prisma.UserWhereInput[] = [];
 
-    if (searchTerm) {
-        andConditions.push({
-            OR: userSearchableFields.map(field => ({
-                [field]: {
-                    contains: searchTerm,
-                    mode: "insensitive"
-                }
-            }))
-        })
-    }
+//     if (searchTerm) {
+//         andConditions.push({
+//             OR: userSearchableFields.map(field => ({
+//                 [field]: {
+//                     contains: searchTerm,
+//                     mode: "insensitive"
+//                 }
+//             }))
+//         })
+//     }
 
-    if (Object.keys(filterData).length > 0) {
-        andConditions.push({
-            AND: Object.keys(filterData).map(key => ({
-                [key]: {
-                    equals: (filterData as any)[key]
-                }
-            }))
-        })
-    }
+//     if (Object.keys(filterData).length > 0) {
+//         andConditions.push({
+//             AND: Object.keys(filterData).map(key => ({
+//                 [key]: {
+//                     equals: (filterData as any)[key]
+//                 }
+//             }))
+//         })
+//     }
 
-    andConditions.push({ role: "TOURIST" });
-    const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? {
-        AND: andConditions
-    } : {}
-    const total = await prisma.user.count({
-        where: whereConditions
-    })
-    const result = await prisma.user.findMany({
-        skip,
-        take: Number(limit),
-        orderBy: {
-            [sortBy]: sortOrder
-        },
-        where: {
-            AND: andConditions,
+//     andConditions.push({ role: "TOURIST" });
+//     const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? {
+//         AND: andConditions
+//     } : {}
+//     const total = await prisma.user.count({
+//         where: whereConditions
+//     })
+//     const result = await prisma.user.findMany({
+//         skip,
+//         take: Number(limit),
+//         orderBy: {
+//             [sortBy]: sortOrder
+//         },
+//         where: {
+//             AND: andConditions,
 
-        },
-        select: {
-            id: true,
-            email: true,
-            name: true,
-            phone: true,
-            role: true,
-            address: true,
-            gender: true,
-            image: true,
-            needPasswordChange: true,
-            status: true,
-            isDeleted: true,
-            createdAt: true,
-            updatedAt: true,
-            profile: true
-        }
-    })
+//         },
+//         select: {
+//             id: true,
+//             email: true,
+//             name: true,
+//             phone: true,
+//             role: true,
+//             needPasswordChange: true,
+//             status: true,
+//             isDeleted: true,
+//             createdAt: true,
+//             updatedAt: true,
+//             profile: true,
+//             touristPreference: true
+//         }
+//     })
 
-    return {
-        meta: {
-            total,
-            page,
-            limit
-        },
-        data: result
-    }
-}
+//     return {
+//         meta: {
+//             total,
+//             page,
+//             limit
+//         },
+//         data: result
+//     }
+// }
 
 const getMyProfile = async (user: IJWTPayload) => {
     const userInfo = await prisma.user.findUniqueOrThrow({
@@ -408,26 +387,13 @@ const getMyProfile = async (user: IJWTPayload) => {
             name: true,
             phone: true,
             role: true,
-            address: true,
-            image: true,
-            gender: true,
-            bio: true,
-            languages: true,
             needPasswordChange: true,
             status: true,
+            isDeleted: true,
             createdAt: true,
             updatedAt: true,
-            profile: user.role === UserRole.GUIDE ? {
-                select: {
-                    experienceYears: true,
-                    expertise: true,
-                    feePerHour: true,
-                    avgRating: true,
-                    availableStatus: true,
-                    verificationStatus: true,
-                    adminNote: true
-                }
-            } : false
+            profile: true,
+            touristPreference: true
         }
     })
     return userInfo
@@ -447,33 +413,17 @@ const getSingleByIdFromDB = async (user: IJWTPayload, id: string) => {
             name: true,
             phone: true,
             role: true,
-            address: true,
-            gender: true,
-            image: true,
             needPasswordChange: true,
             status: true,
             isDeleted: true,
             createdAt: true,
             updatedAt: true,
-
-            bio: true,
-            languages: true,
-
-            profile: {
-                select: {
-                    expertise: true,
-                    feePerHour: true,
-                    experienceYears: true,
-                    avgRating: true,
-                    availableStatus: true,
-                    verificationStatus: true,
-                    locationId: true,
-                }
-            }
+            profile: true,
+            touristPreference: true
         }
     });
 }
-const updateMyProfie = async (user: IJWTPayload, req: Request) => {
+const updateMyProfile = async (user: IJWTPayload, req: Request) => {
     const currentUserInfo = await prisma.user.findUniqueOrThrow({
         where: {
             email: user?.email
@@ -481,36 +431,48 @@ const updateMyProfie = async (user: IJWTPayload, req: Request) => {
         include: { profile: true }
     });
 
-    let imageUrl = currentUserInfo.image;
-    if (req.file) {
-        const upload = await fileUploader.uploadToCloudinary(req.file);
-        imageUrl = typeof upload === "string" ? upload : Array.isArray(upload) ? upload[0] : imageUrl;
+    let imageUrl = currentUserInfo.profile?.image;
+    // if (req.file) {
+    //     const upload = await fileUploader.uploadToCloudinary(req.file);
+    //     imageUrl = typeof upload === "string" ? upload : Array.isArray(upload) ? upload[0] : imageUrl;
 
+    // }
+    if (req.file) {
+        imageUrl = (await fileUploader.uploadToCloudinary(req.file)) as string;
     }
-    const payload = req.body.data ? JSON.parse(req.body.data) : req.body;
-    const { profile, ...userData } = payload;
+    // const payload = req.body.data ? JSON.parse(req.body.data) : req.body;
+    const payload = req.body;
+    // const { profile, ...userData } = payload;
 
     const updated = await prisma.user.update({
         where: { id: currentUserInfo.id },
         data: {
-            name: userData.name,
-            phone: userData.phone,
-            address: userData.address,
-            bio: userData.bio,
-            languages: Array.isArray(userData.languages)
-                ? userData.languages
-                : (userData.languages?.toString().split(",").map((l: string) => l.trim()) || []),
-            gender: userData.gender,
+            name: payload.name,
+            phone: payload.phone,
             image: imageUrl,
-            profile: profile
+            profile: payload.profile
                 ? {
                     update: {
-                        expertise: profile.expertise ?? "",
-                        experienceYears: profile.experienceYears ?? null,
-                        feePerHour: profile.feePerHour ?? null,
+                        image: imageUrl,
+                        bio: payload.profile.bio,
+                        languages: payload.profile.languages,
+                        address: payload.profile.address,
+
+                        expertise: payload.profile.expertise,
+                        experienceYears: payload.profile.experienceYears,
+                        dailyRate: payload.profile.dailyRate,
                     },
                 }
                 : undefined,
+            touristPreference: payload.touristPreference
+                ? {
+                    update: payload.touristPreference,
+                }
+                : undefined,
+        },
+        include: {
+            profile: true,
+            touristPreference: true,
         },
     });
 
@@ -552,6 +514,34 @@ const changeUserStatus = async (id: string, payload: { status?: UserStatus, veri
     return updateUserStatus;
 };
 
+const deleteFromDB = async (id: string) => {
+    const result = await prisma.user.delete({
+        where: { id: id }
+    })
+    return result
+
+}
+const softDeleteFromDB = async (id: string) => {
+    const user = await prisma.user.findUnique({
+        where: { id }
+    });
+    if (!user || user.isDeleted) {
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    }
+    if (user.status === UserStatus.DELETED) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "User already deleted");
+    }
+    const result = await prisma.user.update({
+        where: { id },
+        data: {
+            isDeleted: true,
+            status: UserStatus.BLOCKED
+        }
+    });
+    return result
+
+}
+
 
 
 
@@ -560,10 +550,12 @@ export const UserService = {
     createUser,
     createAdmin,
     getAllFromDB,
-    getGuidesAllFromDB,
-    getTouristsAllFromDB,
+    // getGuidesAllFromDB,
+    // getTouristsAllFromDB,
     getMyProfile,
     getSingleByIdFromDB,
-    updateMyProfie,
-    changeUserStatus
+    updateMyProfile,
+    changeUserStatus,
+    deleteFromDB,
+    softDeleteFromDB
 }

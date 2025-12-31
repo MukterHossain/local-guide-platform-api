@@ -6,7 +6,6 @@ import { IJWTPayload } from "../../types/common";
 import httpStatus from 'http-status'
 import { userFilterableFields } from "./user.constant";
 import pick from "../../helper/pick";
-import { fileUploader } from "../../helper/fileUploader";
 
 const createUser = catchAsync (async (req:Request, res:Response) =>{
     const result = await UserService.createUser(req)
@@ -20,7 +19,7 @@ const createUser = catchAsync (async (req:Request, res:Response) =>{
     })
 })
 const createAdmin = catchAsync (async (req:Request, res:Response) =>{
-    const result = await UserService.createAdmin(req)
+    const result = await UserService.createAdmin(req.body)
     console.log("result", result);
 
     sendResponse(res, {
@@ -46,36 +45,36 @@ const getAllFromDB = catchAsync (async (req:Request , res:Response) =>{
         meta: result.meta
     })
 })
-const getGuidesAllFromDB = catchAsync (async (req:Request , res:Response) =>{
-     const filters = pick(req.query, userFilterableFields) // searching , filtering
-    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
+// const getGuidesAllFromDB = catchAsync (async (req:Request , res:Response) =>{
+//      const filters = pick(req.query, userFilterableFields) // searching , filtering
+//     const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
 
-    const result = await UserService.getGuidesAllFromDB(filters, options)
-    console.log("result", result);
+//     const result = await UserService.getGuidesAllFromDB(filters, options)
+//     console.log("result", result);
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "User guides retrieved successfully",
-        data: result.data,
-        meta: result.meta
-    })
-})
-const getTouristsAllFromDB = catchAsync (async (req:Request , res:Response) =>{
-     const filters = pick(req.query, userFilterableFields) // searching , filtering
-    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
+//     sendResponse(res, {
+//         statusCode: httpStatus.OK,
+//         success: true,
+//         message: "User guides retrieved successfully",
+//         data: result.data,
+//         meta: result.meta
+//     })
+// })
+// const getTouristsAllFromDB = catchAsync (async (req:Request , res:Response) =>{
+//      const filters = pick(req.query, userFilterableFields) // searching , filtering
+//     const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
 
-    const result = await UserService.getTouristsAllFromDB(filters, options)
-    console.log("result", result);
+//     const result = await UserService.getTouristsAllFromDB(filters, options)
+//     console.log("result", result);
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "User tourists retrieved successfully",
-        data: result.data,
-        meta: result.meta
-    })
-})
+//     sendResponse(res, {
+//         statusCode: httpStatus.OK,
+//         success: true,
+//         message: "User tourists retrieved successfully",
+//         data: result.data,
+//         meta: result.meta
+//     })
+// })
 const getMyProfile = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
     const user = req.user;
     const result = await UserService.getMyProfile(user as IJWTPayload)
@@ -103,7 +102,7 @@ const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayloa
 })
 const updateMyProfie = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
 
-    const result = await UserService.updateMyProfie(req.user!, req)
+    const result = await UserService.updateMyProfile(req.user!, req)
     console.log("result", result);
 
     sendResponse(res, {
@@ -126,15 +125,42 @@ const changeUserStatus = catchAsync (async (req:Request , res:Response) =>{
     })
 })
 
+const deleteFromDB = catchAsync (async (req:Request , res:Response) =>{
+  const id = req.params.id;
+    const result = await UserService.deleteFromDB(id);
+    console.log("result delete", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User deleted successfully",
+        data: null
+    })
+})
+const softDeleteFromDB = catchAsync (async (req:Request , res:Response) =>{
+  const id = req.params.id;
+    const result = await UserService.softDeleteFromDB(id);
+    console.log("result delete", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User soft deleted successfully",
+        data: null
+    })
+})
+
 
 export const UserController = {
     createUser,
     createAdmin,
     getAllFromDB,
-    getGuidesAllFromDB,
-    getTouristsAllFromDB,
+    // getGuidesAllFromDB,
+    // getTouristsAllFromDB,
     getMyProfile,
     getSingleByIdFromDB,
     updateMyProfie,
-    changeUserStatus
+    changeUserStatus,
+    deleteFromDB,
+    softDeleteFromDB
 }
