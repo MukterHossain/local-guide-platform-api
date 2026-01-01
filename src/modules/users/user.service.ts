@@ -428,55 +428,121 @@ const updateMyProfile = async (user: IJWTPayload, req: Request) => {
         where: {
             email: user?.email
         },
-        include: { profile: true }
+        include: { profile: true, touristPreference: true }
     });
 
-    let imageUrl = currentUserInfo.profile?.image;
-    // if (req.file) {
-    //     const upload = await fileUploader.uploadToCloudinary(req.file);
-    //     imageUrl = typeof upload === "string" ? upload : Array.isArray(upload) ? upload[0] : imageUrl;
+    if (user.role === UserRole.TOURIST && req.body.profile && (req.body.profile.expertise ||
+        req.body.profile.experienceYears ||
+        req.body.profile.dailyRate ||
+        req.body.profile.locationId)) {
+        throw new ApiError(httpStatus.FORBIDDEN, "Tourist cannot update guide fields")
+    }
 
-    // }
+    let imageUrl = currentUserInfo.profile?.image;
+
     if (req.file) {
         imageUrl = (await fileUploader.uploadToCloudinary(req.file)) as string;
     }
-    // const payload = req.body.data ? JSON.parse(req.body.data) : req.body;
     const payload = req.body;
-    // const { profile, ...userData } = payload;
 
-    const updated = await prisma.user.update({
+    const data: any = {
+        name: payload.name,
+        phone: payload.phone,
+    }
+
+    if (payload.profile) {
+        data.profile = {
+            upsert: {
+                create: {
+                    image: imageUrl,
+                    bio: payload.profile.bio,
+                    languages: payload.profile.languages ?? [],
+                    address: payload.profile.address,
+                    gender: payload.profile.gender,
+                },
+                update: {
+                    image: imageUrl,
+                    bio: payload.profile.bio,
+                    languages: payload.profile.languages ?? [],
+                    address: payload.profile.address,
+                    gender: payload.profile.gender
+                }
+            }
+        }
+    }
+
+    if (payload.touristPreference) {
+        data.touristPreference = {
+            upsert: {
+                create: payload.touristPreference,
+                update: payload.touristPreference
+            }
+        }
+    }
+
+    const updatedUser = await prisma.user.update({
         where: { id: currentUserInfo.id },
-        data: {
-            name: payload.name,
-            phone: payload.phone,
-            image: imageUrl,
-            profile: payload.profile
-                ? {
-                    update: {
-                        image: imageUrl,
-                        bio: payload.profile.bio,
-                        languages: payload.profile.languages,
-                        address: payload.profile.address,
-
-                        expertise: payload.profile.expertise,
-                        experienceYears: payload.profile.experienceYears,
-                        dailyRate: payload.profile.dailyRate,
-                    },
-                }
-                : undefined,
-            touristPreference: payload.touristPreference
-                ? {
-                    update: payload.touristPreference,
-                }
-                : undefined,
-        },
+        data,
         include: {
             profile: true,
             touristPreference: true,
         },
     });
 
-    return updated;
+    return updatedUser;
+}
+const becomeGuide = async (user: IJWTPayload, payload: {
+    expertise: string;
+    experienceYears: number;
+    dailyRate: number;
+    locationId: string;
+}) => {
+    const existUser = await prisma.user.findUniqueOrThrow({
+        where: {
+            id: user.id
+        },
+        include: { profile: true }
+    });
+
+    if (existUser.role === UserRole.GUIDE) {
+        throw new ApiError(httpStatus.BAD_REQUEST,
+            "You are already a guide")
+    }
+    if (existUser.role === UserRole.ADMIN) {
+        throw new ApiError(httpStatus.BAD_REQUEST,
+            "Admin cannot become a guide")
+    }
+    const result = await prisma.$transaction(async (tx) => {
+        const updatedUser = await tx.user.update({
+            where: { id: existUser.id },
+            data: {
+                role: UserRole.GUIDE
+            }
+        });
+
+        const profile = await tx.profile.upsert({
+            where: { userId: existUser.id },
+            create: {
+                userId: existUser.id,
+                expertise: payload.expertise,
+                experienceYears: payload.experienceYears,
+                dailyRate: payload.dailyRate,
+                locationId: payload.locationId,
+                verificationStatus: GuideVerificationStatus.PENDING
+            },
+            update: {
+                expertise: payload.expertise,
+                experienceYears: payload.experienceYears,
+                dailyRate: payload.dailyRate,
+                locationId: payload.locationId,
+                verificationStatus: GuideVerificationStatus.PENDING
+            }
+        });
+
+        return { updatedUser, profile };
+    })
+
+    return result;
 }
 
 
@@ -555,6 +621,7 @@ export const UserService = {
     getMyProfile,
     getSingleByIdFromDB,
     updateMyProfile,
+    becomeGuide,
     changeUserStatus,
     deleteFromDB,
     softDeleteFromDB

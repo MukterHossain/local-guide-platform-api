@@ -18,6 +18,17 @@ const createUser = catchAsync (async (req:Request, res:Response) =>{
         data: result
     })
 })
+const becomeGuide = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
+    const result = await UserService.becomeGuide(req.user as IJWTPayload, req.body)
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Guide application submitted successfully",
+        data: result
+    })
+})
 const createAdmin = catchAsync (async (req:Request, res:Response) =>{
     const result = await UserService.createAdmin(req.body)
     console.log("result", result);
@@ -153,6 +164,7 @@ const softDeleteFromDB = catchAsync (async (req:Request , res:Response) =>{
 
 export const UserController = {
     createUser,
+    becomeGuide,
     createAdmin,
     getAllFromDB,
     // getGuidesAllFromDB,

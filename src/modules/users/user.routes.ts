@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express'
 import { UserController } from './user.controller';
 import { fileUploader } from '../../helper/fileUploader';
-import { userValidation } from './user.validation';
+import { becomeGuideValidation, userValidation } from './user.validation';
 import auth from '../../middlewares/auth';
 import { UserRole } from '@prisma/client';
 import { IJWTPayload } from '../../types/common';
@@ -35,6 +35,9 @@ router.post(
         }
     }
 );
+router.post("/become-guide",
+    auth(UserRole.TOURIST), validateRequest(becomeGuideValidation), UserController.becomeGuide
+);
 router.post("/admin",
     fileUploader.upload.single('file'),
     (req: Request, res: Response, next: NextFunction) => {
@@ -50,7 +53,7 @@ router.patch(
     validateRequest(userValidation.adminUpdateGuideStatus),
     UserController.changeUserStatus
 );
-router.patch("/update-profile",
+router.patch("/me/profile",
     auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
     fileUploader.upload.single('file'),
     (req: Request & { user?: IJWTPayload }, res: Response, next: NextFunction) => {

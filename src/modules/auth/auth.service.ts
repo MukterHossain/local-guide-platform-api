@@ -132,8 +132,6 @@ const getMe = async (user: any) => {
             status: true,
             name: true,
             phone: true,
-            image: true,
-            address: true,
             createdAt: true,
             updatedAt: true,
         }
