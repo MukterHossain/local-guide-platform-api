@@ -56,36 +56,36 @@ const getAllFromDB = catchAsync (async (req:Request , res:Response) =>{
         meta: result.meta
     })
 })
-// const getGuidesAllFromDB = catchAsync (async (req:Request , res:Response) =>{
-//      const filters = pick(req.query, userFilterableFields) // searching , filtering
-//     const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
+const getGuidesAllFromDB = catchAsync (async (req:Request , res:Response) =>{
+     const filters = pick(req.query, userFilterableFields) // searching , filtering
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
 
-//     const result = await UserService.getGuidesAllFromDB(filters, options)
-//     console.log("result", result);
+    const result = await UserService.getGuidesAllFromDB(filters, options)
+    console.log("result", result);
 
-//     sendResponse(res, {
-//         statusCode: httpStatus.OK,
-//         success: true,
-//         message: "User guides retrieved successfully",
-//         data: result.data,
-//         meta: result.meta
-//     })
-// })
-// const getTouristsAllFromDB = catchAsync (async (req:Request , res:Response) =>{
-//      const filters = pick(req.query, userFilterableFields) // searching , filtering
-//     const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User guides retrieved successfully",
+        data: result.data,
+        meta: result.meta
+    })
+})
+const getTouristsAllFromDB = catchAsync (async (req:Request , res:Response) =>{
+     const filters = pick(req.query, userFilterableFields) // searching , filtering
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]) // pagination and sorting
 
-//     const result = await UserService.getTouristsAllFromDB(filters, options)
-//     console.log("result", result);
+    const result = await UserService.getTouristsAllFromDB(filters, options)
+    console.log("result", result);
 
-//     sendResponse(res, {
-//         statusCode: httpStatus.OK,
-//         success: true,
-//         message: "User tourists retrieved successfully",
-//         data: result.data,
-//         meta: result.meta
-//     })
-// })
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User tourists retrieved successfully",
+        data: result.data,
+        meta: result.meta
+    })
+})
 const getMyProfile = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
     const user = req.user;
     const result = await UserService.getMyProfile(user as IJWTPayload)
@@ -167,8 +167,8 @@ export const UserController = {
     becomeGuide,
     createAdmin,
     getAllFromDB,
-    // getGuidesAllFromDB,
-    // getTouristsAllFromDB,
+    getGuidesAllFromDB,
+    getTouristsAllFromDB,
     getMyProfile,
     getSingleByIdFromDB,
     updateMyProfie,

@@ -15,8 +15,8 @@ router.get("/me",
     auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
     UserController.getMyProfile)
 router.get("/", auth(UserRole.ADMIN), UserController.getAllFromDB)
-// router.get("/guides",  UserController.getGuidesAllFromDB)
-// router.get("/tourists", auth(UserRole.ADMIN), UserController.getTouristsAllFromDB)
+router.get("/guides",  UserController.getGuidesAllFromDB)
+router.get("/tourists", auth(UserRole.ADMIN), UserController.getTouristsAllFromDB)
 router.get("/:id", auth(UserRole.ADMIN), UserController.getSingleByIdFromDB)
 
 router.post(

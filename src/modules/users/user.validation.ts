@@ -31,7 +31,7 @@ export const createUserValidation = z.object({
   password: z.string().min(6),
 
   phone: z.string().optional(),
-  gender: z.enum(["MALE", "FEMALE"]).optional(),
+  // gender: z.enum(["MALE", "FEMALE"]).optional(),
 
   // role: z.enum(["TOURIST", "GUIDE"]).default("TOURIST"),
 

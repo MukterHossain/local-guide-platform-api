@@ -10,11 +10,9 @@ import { LocationValidation } from './location.validation';
 const router = express.Router();
 
 
-
-
-
-
-router.get("/", auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), LocationController.getAllFromDB)
+router.get("/", 
+    auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), 
+    LocationController.getAllFromDB)
 
 router.get("/:id",
     auth(UserRole.GUIDE, UserRole.ADMIN),

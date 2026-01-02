@@ -33,7 +33,6 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
             email,
             password: hasshedPassword,
             phone,
-            gender,
             role,
         },
         select: {
@@ -80,65 +79,6 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
             touristPreference: true,
         },
     });
-
-
-
-    // if (req.file) {
-    //     const uploadResult = await fileUploader.uploadToCloudinary(req.file) as string;
-    //     console.log("uploadResult", uploadResult);
-    //     // req.body.image = uploadResult?.secure_url
-    //     user = await prisma.user.update({
-    //         where: { id: user.id },
-    //         data: { image: uploadResult },
-    //         select: {
-    //             id: true,
-    //             email: true,
-    //             name: true,
-    //             phone: true,
-    //             role: true,
-    //             bio: true,
-    //             languages: true,
-    //             gender: true,
-    //             address: true,
-    //             image: true,
-    //             needPasswordChange: true,
-    //             status: true,
-    //             isDeleted: true,
-    //             createdAt: true,
-    //             updatedAt: true
-    //         }
-    //     })
-    // }
-    // let finalUser: UserWithProfile = { ...user };
-    // // guide profile
-    // if (role === UserRole.GUIDE) {
-    //     if (!profile) {
-    //         throw new ApiError(httpStatus.BAD_REQUEST, "Guide profile data is required")
-    //     }
-    //     await prisma.profile.create({
-    //         data: {
-    //             userId: user.id,
-    //             expertise: profile.expertise,
-    //             avgRating: profile.avgRating,
-    //             experienceYears: profile.experienceYears,
-    //             dailyRate: profile.dailyRate,
-    //             locationId: profile.locationId ?? null,
-    //         }
-    //     })
-    // }
-
-
-    // if (role === UserRole.GUIDE) {
-    //     const guideProfile = await prisma.profile.findUnique({
-    //         where: {
-    //             userId: user.id
-    //         },
-    //     })
-    //     console.log("user", user)
-    //     finalUser.profile = guideProfile;
-    // }
-
-
 }
 const createAdmin = async (payload: CreateAdminInput) => {
     const exists = await prisma.user.findUnique({ where: { email: payload.email } })
@@ -234,146 +174,146 @@ const getAllFromDB = async (params: any, options: IOptions) => {
         data: result
     }
 }
-// const getGuidesAllFromDB = async (params: any, options: IOptions) => {
+const getGuidesAllFromDB = async (params: any, options: IOptions) => {
 
-//     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
-//     const { searchTerm, ...filterData } = params;
+    const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
+    const { searchTerm, ...filterData } = params;
 
-//     const andConditions: Prisma.UserWhereInput[] = [];
+    const andConditions: Prisma.UserWhereInput[] = [];
 
-//     if (searchTerm) {
-//         andConditions.push({
-//             OR: userSearchableFields.map(field => ({
-//                 [field]: {
-//                     contains: searchTerm,
-//                     mode: "insensitive"
-//                 }
-//             }))
-//         })
-//     }
+    if (searchTerm) {
+        andConditions.push({
+            OR: userSearchableFields.map(field => ({
+                [field]: {
+                    contains: searchTerm,
+                    mode: "insensitive"
+                }
+            }))
+        })
+    }
 
-//     if (Object.keys(filterData).length > 0) {
-//         andConditions.push({
-//             AND: Object.keys(filterData).map(key => ({
-//                 [key]: {
-//                     equals: (filterData as any)[key]
-//                 }
-//             }))
-//         })
-//     }
-//     andConditions.push({ role: "GUIDE" });
+    if (Object.keys(filterData).length > 0) {
+        andConditions.push({
+            AND: Object.keys(filterData).map(key => ({
+                [key]: {
+                    equals: (filterData as any)[key]
+                }
+            }))
+        })
+    }
+    andConditions.push({ role: "GUIDE" });
 
-//     const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? {
-//         AND: andConditions
-//     } : {}
-//     const total = await prisma.user.count({
-//         where: whereConditions
-//     })
-//     const result = await prisma.user.findMany({
-//         skip,
-//         take: Number(limit),
-//         orderBy: {
-//             [sortBy]: sortOrder
-//         },
-//         where: {
-//             AND: andConditions,
+    const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? {
+        AND: andConditions
+    } : {}
+    const total = await prisma.user.count({
+        where: whereConditions
+    })
+    const result = await prisma.user.findMany({
+        skip,
+        take: Number(limit),
+        orderBy: {
+            [sortBy]: sortOrder
+        },
+        where: {
+            AND: andConditions,
 
-//         },
-//         select: {
-//             id: true,
-//             email: true,
-//             name: true,
-//             phone: true,
-//             role: true,
-//             needPasswordChange: true,
-//             status: true,
-//             isDeleted: true,
-//             createdAt: true,
-//             updatedAt: true,
-//             profile: true,
-//             touristPreference: true
-//         }
-//     })
+        },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true,
+            role: true,
+            needPasswordChange: true,
+            status: true,
+            isDeleted: true,
+            createdAt: true,
+            updatedAt: true,
+            profile: true,
+            touristPreference: true
+        }
+    })
 
-//     return {
-//         meta: {
-//             total,
-//             page,
-//             limit
-//         },
-//         data: result
-//     }
-// }
-// const getTouristsAllFromDB = async (params: any, options: IOptions) => {
+    return {
+        meta: {
+            total,
+            page,
+            limit
+        },
+        data: result
+    }
+}
+const getTouristsAllFromDB = async (params: any, options: IOptions) => {
 
-//     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
-//     const { searchTerm, ...filterData } = params;
+    const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
+    const { searchTerm, ...filterData } = params;
 
-//     const andConditions: Prisma.UserWhereInput[] = [];
+    const andConditions: Prisma.UserWhereInput[] = [];
 
-//     if (searchTerm) {
-//         andConditions.push({
-//             OR: userSearchableFields.map(field => ({
-//                 [field]: {
-//                     contains: searchTerm,
-//                     mode: "insensitive"
-//                 }
-//             }))
-//         })
-//     }
+    if (searchTerm) {
+        andConditions.push({
+            OR: userSearchableFields.map(field => ({
+                [field]: {
+                    contains: searchTerm,
+                    mode: "insensitive"
+                }
+            }))
+        })
+    }
 
-//     if (Object.keys(filterData).length > 0) {
-//         andConditions.push({
-//             AND: Object.keys(filterData).map(key => ({
-//                 [key]: {
-//                     equals: (filterData as any)[key]
-//                 }
-//             }))
-//         })
-//     }
+    if (Object.keys(filterData).length > 0) {
+        andConditions.push({
+            AND: Object.keys(filterData).map(key => ({
+                [key]: {
+                    equals: (filterData as any)[key]
+                }
+            }))
+        })
+    }
 
-//     andConditions.push({ role: "TOURIST" });
-//     const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? {
-//         AND: andConditions
-//     } : {}
-//     const total = await prisma.user.count({
-//         where: whereConditions
-//     })
-//     const result = await prisma.user.findMany({
-//         skip,
-//         take: Number(limit),
-//         orderBy: {
-//             [sortBy]: sortOrder
-//         },
-//         where: {
-//             AND: andConditions,
+    andConditions.push({ role: "TOURIST" });
+    const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? {
+        AND: andConditions
+    } : {}
+    const total = await prisma.user.count({
+        where: whereConditions
+    })
+    const result = await prisma.user.findMany({
+        skip,
+        take: Number(limit),
+        orderBy: {
+            [sortBy]: sortOrder
+        },
+        where: {
+            AND: andConditions,
 
-//         },
-//         select: {
-//             id: true,
-//             email: true,
-//             name: true,
-//             phone: true,
-//             role: true,
-//             needPasswordChange: true,
-//             status: true,
-//             isDeleted: true,
-//             createdAt: true,
-//             updatedAt: true,
-//             profile: true,
-//             touristPreference: true
-//         }
-//     })
+        },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true,
+            role: true,
+            needPasswordChange: true,
+            status: true,
+            isDeleted: true,
+            createdAt: true,
+            updatedAt: true,
+            profile: true,
+            touristPreference: true
+        }
+    })
 
-//     return {
-//         meta: {
-//             total,
-//             page,
-//             limit
-//         },
-//         data: result
-//     }
-// }
+    return {
+        meta: {
+            total,
+            page,
+            limit
+        },
+        data: result
+    }
+}
 
 const getMyProfile = async (user: IJWTPayload) => {
     const userInfo = await prisma.user.findUniqueOrThrow({
@@ -392,6 +332,7 @@ const getMyProfile = async (user: IJWTPayload) => {
             isDeleted: true,
             createdAt: true,
             updatedAt: true,
+            // locations: true,
             profile: true,
             touristPreference: true
         }
@@ -435,7 +376,7 @@ const updateMyProfile = async (user: IJWTPayload, req: Request) => {
         req.body.profile.experienceYears ||
         req.body.profile.dailyRate ||
         req.body.profile.locationId)) {
-        throw new ApiError(httpStatus.FORBIDDEN, "Tourist cannot update guide fields")
+        throw new ApiError(httpStatus.FORBIDDEN, "Tourist cannot update guide fields. Please, become a guide ");
     }
 
     let imageUrl = currentUserInfo.profile?.image;
@@ -459,13 +400,23 @@ const updateMyProfile = async (user: IJWTPayload, req: Request) => {
                     languages: payload.profile.languages ?? [],
                     address: payload.profile.address,
                     gender: payload.profile.gender,
+                    // Guide fields
+                    expertise: payload.profile.expertise,
+                    experienceYears: payload.profile.experienceYears,
+                    dailyRate: payload.profile.dailyRate,
+                    locationId: payload.profile.locationId
                 },
                 update: {
                     image: imageUrl,
                     bio: payload.profile.bio,
                     languages: payload.profile.languages ?? [],
                     address: payload.profile.address,
-                    gender: payload.profile.gender
+                    gender: payload.profile.gender,
+                    // Guide fields
+                    expertise: payload.profile.expertise,
+                    experienceYears: payload.profile.experienceYears,
+                    dailyRate: payload.profile.dailyRate,
+                    locationId: payload.profile.locationId
                 }
             }
         }
@@ -511,6 +462,12 @@ const becomeGuide = async (user: IJWTPayload, payload: {
     if (existUser.role === UserRole.ADMIN) {
         throw new ApiError(httpStatus.BAD_REQUEST,
             "Admin cannot become a guide")
+    }
+    if (user.role !== UserRole.TOURIST) {
+        throw new ApiError(
+            httpStatus.FORBIDDEN,
+            "Only tourists can apply to become a guide"
+        );
     }
     const result = await prisma.$transaction(async (tx) => {
         const updatedUser = await tx.user.update({
@@ -616,8 +573,8 @@ export const UserService = {
     createUser,
     createAdmin,
     getAllFromDB,
-    // getGuidesAllFromDB,
-    // getTouristsAllFromDB,
+    getGuidesAllFromDB,
+    getTouristsAllFromDB,
     getMyProfile,
     getSingleByIdFromDB,
     updateMyProfile,
