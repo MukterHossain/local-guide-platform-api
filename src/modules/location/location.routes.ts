@@ -13,6 +13,9 @@ const router = express.Router();
 router.get("/", 
     auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), 
     LocationController.getAllFromDB)
+router.get("/guide-locations", 
+    auth(UserRole.ADMIN, UserRole.GUIDE), 
+    LocationController.getAllGuideLocations)
 
 router.get("/:id",
     auth(UserRole.GUIDE, UserRole.ADMIN),

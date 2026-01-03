@@ -100,6 +100,14 @@ const getMyAvailability = async (params: any, options: IOptions, user: IJWTPaylo
     andConditions.push({
         guideId: user.id,
     });
+
+    const today = new Date();
+    andConditions.push({
+        endAt: {
+            gte: today
+        }
+    });
+
     if (searchTerm) {
         andConditions.push({
             OR: availabilitySearchableFields.map(field => ({

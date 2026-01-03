@@ -59,6 +59,17 @@ const createUser = async (req: Request): Promise<UserWithProfile> => {
         },
     });
 
+    if (role === UserRole.GUIDE && profile?.locationIds?.length) {
+        const guideLocationsData = profile.locationIds.map((locationId: string) => ({
+            guideId: user.id,
+            locationId
+        }))
+        await prisma.guideLocation.createMany({
+            data: guideLocationsData,
+            skipDuplicates: true
+        })
+    }
+
     if (role === UserRole.TOURIST) {
         await prisma.touristPreference.create({
             data: {
@@ -321,21 +332,26 @@ const getMyProfile = async (user: IJWTPayload) => {
             email: user.email,
             status: UserStatus.ACTIVE
         },
-        select: {
-            id: true,
-            email: true,
-            name: true,
-            phone: true,
-            role: true,
-            needPasswordChange: true,
-            status: true,
-            isDeleted: true,
-            createdAt: true,
-            updatedAt: true,
-            // locations: true,
+        include: {
             profile: true,
-            touristPreference: true
-        }
+            touristPreference: true,
+            guideLocations: {include: {location:true}}
+        },
+        // select: {
+        //     id: true,
+        //     email: true,
+        //     name: true,
+        //     phone: true,
+        //     role: true,
+        //     needPasswordChange: true,
+        //     status: true,
+        //     isDeleted: true,
+        //     createdAt: true,
+        //     updatedAt: true,
+        //     // locations: true,
+        //     profile: true,
+        //     touristPreference: true
+        // }
     })
     return userInfo
 }
@@ -371,11 +387,11 @@ const updateMyProfile = async (user: IJWTPayload, req: Request) => {
         },
         include: { profile: true, touristPreference: true }
     });
-
+    // **************** 
     if (user.role === UserRole.TOURIST && req.body.profile && (req.body.profile.expertise ||
         req.body.profile.experienceYears ||
         req.body.profile.dailyRate ||
-        req.body.profile.locationId)) {
+        req.body.profile.locationIds)) {
         throw new ApiError(httpStatus.FORBIDDEN, "Tourist cannot update guide fields. Please, become a guide ");
     }
 
@@ -404,7 +420,7 @@ const updateMyProfile = async (user: IJWTPayload, req: Request) => {
                     expertise: payload.profile.expertise,
                     experienceYears: payload.profile.experienceYears,
                     dailyRate: payload.profile.dailyRate,
-                    locationId: payload.profile.locationId
+
                 },
                 update: {
                     image: imageUrl,
@@ -416,11 +432,14 @@ const updateMyProfile = async (user: IJWTPayload, req: Request) => {
                     expertise: payload.profile.expertise,
                     experienceYears: payload.profile.experienceYears,
                     dailyRate: payload.profile.dailyRate,
-                    locationId: payload.profile.locationId
                 }
             }
         }
     }
+
+
+
+
 
     if (payload.touristPreference) {
         data.touristPreference = {
@@ -440,8 +459,32 @@ const updateMyProfile = async (user: IJWTPayload, req: Request) => {
         },
     });
 
+    const locationIds = payload.profile?.locationIds ? JSON.parse(payload.profile.locationIds as string) : [];
+
+    if (user.role === UserRole.GUIDE && payload.profile?.locationIds?.length) {
+        // Remove old guide locations 
+        await prisma.guideLocation.deleteMany({
+            where: { guideId: currentUserInfo.id }
+        })
+
+        // Add new guide locations
+        if (payload.profile.locationIds.length > 0) {
+            const guideLocationsData = payload.profile.locationIds.map((locationId: string) => ({
+                guideId: user.id,
+                locationId
+            })
+            );
+            await prisma.guideLocation.createMany({
+                data: guideLocationsData,
+                skipDuplicates: true
+            })
+        }
+    }
+
     return updatedUser;
 }
+
+
 const becomeGuide = async (user: IJWTPayload, payload: {
     expertise: string;
     experienceYears: number;

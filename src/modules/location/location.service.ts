@@ -33,7 +33,7 @@ const inserIntoDB = async (user:IJWTPayload, city: string, country: string)=>{
 const getAllFromDB =async(params:any, options: IOptions)=>{
  
     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
-    const { searchTerm, ...filterData } = params;
+    const { searchTerm,  ...filterData } = params;
 
     const andConditions: Prisma.LocationWhereInput[] = [];
     
@@ -47,6 +47,16 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
                 }))
             })
         }
+
+        // if(guideId){
+        //     andConditions.push({
+        //         guideLocations: {
+        //             none: {
+        //                 guideId: guideId
+        //             }
+        //         }
+        //     })
+        // }
     
         if (Object.keys(filterData).length > 0) {
             andConditions.push({
@@ -85,6 +95,22 @@ const getAllFromDB =async(params:any, options: IOptions)=>{
     }, 
     data:findData
 }
+}
+const getAllGuideLocations =async(user: IJWTPayload)=>{
+     const locationData = await prisma.location.findMany({
+            where: { 
+                guideLocations: {
+                    none: {
+                        guideId: user.id  
+                    }    
+                }
+             },
+             orderBy: {
+                city: 'asc'
+             },
+        })
+        return locationData
+    
 }
 const getSingleByIdFromDB = async (user:IJWTPayload, id:string)=>{
     if(user.role !== UserRole.GUIDE && user.role !== UserRole.ADMIN){
@@ -162,6 +188,7 @@ const deleteFromDB = async (id:string)=>{
 export const LocationService = {
     inserIntoDB,
     getAllFromDB,
+    getAllGuideLocations,
     getSingleByIdFromDB,
     updateIntoDB,
     deleteFromDB

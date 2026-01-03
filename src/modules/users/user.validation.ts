@@ -13,7 +13,7 @@ const profileValidation = z.object({
   expertise: z.string().optional(),
   experienceYears: z.number().int().min(0).optional(),
   dailyRate: z.number().positive().optional(),
-  locationId: z.string().nullable().optional(),
+  locationIds: z.array(z.string()).optional(),
 });
 
 export const touristPreferenceValidation = z.object({
@@ -41,7 +41,7 @@ export const becomeGuideValidation = z.object({
   expertise: z.string().min(10),
   experienceYears: z.number().int().min(0),
   dailyRate: z.number().positive(),
-  locationId: z.string(),
+  locationIds: z.array(z.string()).min(1),
 });
 
 const createAdminValidation = z.object({
