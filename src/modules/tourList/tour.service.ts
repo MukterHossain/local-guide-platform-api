@@ -1,4 +1,4 @@
-import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
+import { Prisma, TourStatus, User, UserRole, UserStatus } from "@prisma/client";
 import { IJWTPayload } from "../../types/common";
 import { prisma } from "../../shared/prisma";
 import { IOptions, paginationHelper } from "../../helper/paginationHelper";
@@ -67,18 +67,27 @@ const inserIntoDB = async (user: IJWTPayload, tourData: any, files: Express.Mult
     return tour
 }
 
-const getAllFromDB = async (params: any, options: IOptions) => {
+const getAllFromDB = async (params: any, options: IOptions, user?: IJWTPayload | null) => {
 
     const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
     const { searchTerm, ...filterData } = params;
 
     const andConditions: Prisma.TourWhereInput[] = [
-        { status: "PUBLISHED" },
         { isDeleted: false },
-        
-        // desc 
-          
     ];
+
+    if (!user || user.role === UserRole.TOURIST) {
+        andConditions.push({ status: "PUBLISHED" });
+    }
+
+    if (user?.role === UserRole.GUIDE) {
+        andConditions.push({
+            OR: [
+                { status: "PUBLISHED" },
+                { guideId: user.id },
+            ],
+        });
+    }
 
     if (searchTerm) {
         andConditions.push({
@@ -128,10 +137,21 @@ const getAllFromDB = async (params: any, options: IOptions) => {
                 select: {
                     id: true,
                     name: true,
+                    email: true,
                     role: true,
                     status: true,
-                    languages: true,
-                    image: true,
+                    profile: {
+                        select: {
+                            id: true,
+                            verificationStatus: true,
+                            image: true,
+                            languages: true,
+                            bio: true,
+                            address: true,
+                            dailyRate: true,
+                            experienceYears: true,
+                        }
+                    },
                     createdAt: true,
                     updatedAt: true
                 }
@@ -150,20 +170,109 @@ const getAllFromDB = async (params: any, options: IOptions) => {
         data: tours
     }
 }
+const getTourListforPublic = async (params: any, options: IOptions) => {
+
+    const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
+    const { searchTerm, ...filterData } = params;
+
+    const andConditions: Prisma.TourWhereInput[] = [
+        { status: "PUBLISHED" },
+        { isDeleted: false },
+    ];
+
+    if (searchTerm) {
+        andConditions.push({
+            OR: tourSearchableFields.map(field => ({
+                [field]: {
+                    contains: searchTerm,
+                    mode: "insensitive"
+                }
+            }))
+        })
+    }
+
+    if (Object.keys(filterData).length > 0) {
+        andConditions.push({
+            AND: Object.keys(filterData).map(key => ({
+                [key]: {
+                    equals: (filterData as any)[key]
+                }
+            }))
+        })
+    }
+    // andConditions.push({ role: "GUIDE" });
+
+    const whereConditions: Prisma.TourWhereInput = andConditions.length > 0 ? {
+        AND: andConditions
+    } : {}
+    const total = await prisma.tour.count({
+        where: whereConditions
+    })
+    const result = await prisma.tour.findMany({
+        skip,
+        take: Number(limit),
+        orderBy: {
+            [sortBy]: sortOrder
+        },
+        where: {
+            AND: andConditions,
+
+        },
+        select: {
+            id: true,
+            title: true,
+            city: true,
+            description: true,
+            tourFee: true,
+            durationHours: true,
+            images: true,
+            status: true,
+            maxPeople: true,
+            createdAt: true,
+            updatedAt: true,
+            guide: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    status: true,
+                    profile: {
+                        select: {
+                            id: true,
+                            verificationStatus: true,
+                            image: true,
+                            languages: true,
+                            bio: true,
+                            address: true,
+                            dailyRate: true,
+                            experienceYears: true,
+                        }
+                    },
+                    createdAt: true,
+                    updatedAt: true
+                }
+            }
+        }
+    })
+
+    return {
+        meta: {
+            total,
+            page,
+            limit
+        },
+        data: result
+    }
+}
+
 const getSingleByIdFromDB = async (user: IJWTPayload, id: string) => {
     const tour = await prisma.tour.findUniqueOrThrow({
         where: { id: id },
         include: {
             guide: {
-                select: {
-                    id: true,
-                    name: true,
-                    role: true,
-                    status: true,
-                    languages: true,
-                    image: true,
-                    createdAt: true,
-                    updatedAt: true
+                include: {
+                    profile: true
                 }
             }
         }
@@ -213,8 +322,18 @@ const getPublicById = async (id: string) => {
                     role: true,
                     status: true,
                     phone: true,
-                    address: true,
-                    image: true,
+                    profile: {
+                        select: {
+                            id: true,
+                            image: true,
+                            verificationStatus: true,
+                            bio: true,
+                            languages: true,
+                            address: true,
+                            dailyRate: true,
+                            experienceYears: true,
+                        }
+                    },
                     createdAt: true,
                     updatedAt: true
                 }
@@ -298,7 +417,7 @@ const updateIntoDB = async (user: IJWTPayload, id: string, payload: any) => {
     const updateData: any = {};
 
     for (const key of allowedFields) {
-        if (payload[key] !== undefined) {
+        if (payload[key] !== undefined && payload[key] !== null) {
             updateData[key] = payload[key];
         }
     }
@@ -338,6 +457,26 @@ const updateIntoDB = async (user: IJWTPayload, id: string, payload: any) => {
     return updatedTour
 
 }
+const changeTourListStatus = async (id: string, status: TourStatus) => {
+
+    if (!Object.values(TourStatus).includes(status)) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid status value")
+    }
+
+    await prisma.tour.findUniqueOrThrow({
+        where: { id: id },
+    })
+    const updateTourListStatus = await prisma.tour.update({
+        where: {
+            id
+        },
+        data: {
+            status,
+        },
+    })
+
+    return updateTourListStatus;
+};
 const deleteFromDB = async (id: string) => {
     const result = await prisma.tour.delete({
         where: { id: id }
@@ -359,8 +498,10 @@ export const TourService = {
     inserIntoDB,
     getAllFromDB,
     getSingleByIdFromDB,
+    getTourListforPublic,
     getPublicById,
     getMyTours,
     updateIntoDB,
-    deleteFromDB
+    changeTourListStatus,
+    deleteFromDB,
 }

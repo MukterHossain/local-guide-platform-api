@@ -48,6 +48,12 @@ export const tourUpdateValidation = z.object({
   ).optional()
 });
 
+export const tourListUpdateValidation = z.object({
+  status: z.enum(["DRAFT", "PUBLISHED", "BLOCKED"], {
+    message: "Invalid tour status",
+  }),
+});
+
 
 
 

@@ -22,17 +22,33 @@ const inserIntoDB = catchAsync(async (req: Request & { user?: IJWTPayload }, res
     })
 })
 
-const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
+const getAllFromDB = catchAsync(async (req: Request & { user?: IJWTPayload }, res: Response) => {
     const filters = pick(req.query, tourFilterableFields)
     const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
 
-    const result = await TourService.getAllFromDB(filters, options);
+    const result = await TourService.getAllFromDB(filters, options, req.user as IJWTPayload);
     console.log("result", result);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "Tours fetched successfully",
+        meta: result.meta,
+        data: result.data ?? []
+    })
+})
+const getTourListforPublic = catchAsync(async (req: Request , res: Response) => {
+  
+    const filters = pick(req.query, tourFilterableFields)
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
+
+    const result = await TourService.getTourListforPublic(filters, options);
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Public tours fetched successfully",
         meta: result.meta,
         data: result.data ?? []
     })
@@ -121,6 +137,20 @@ const updateIntoDB = catchAsync(async (req: Request & { user?: IJWTPayload }, re
         data: result
     })
 })
+const changeTourListStatus = catchAsync(async (req: Request & { user?: IJWTPayload }, res: Response) => {
+    const id = req.params.id;
+    const { status } = req.body;
+
+    const result = await TourService.changeTourListStatus(id, status);
+    console.log("result", result);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Tour status updated successfully",
+        data: result
+    })
+})
 const deleteFromDB = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
     const result = await TourService.deleteFromDB(id);
@@ -146,8 +176,10 @@ export const TourController = {
     inserIntoDB,
     getAllFromDB,
     getSingleByIdFromDB,
+    getTourListforPublic,
     getPublicById,
     getMyTours,
     updateIntoDB,
+    changeTourListStatus,
     deleteFromDB
 }

@@ -10,7 +10,7 @@ model Tour {
     maxPeople     Int
     meetingPoint  String?
 
-    status    TourStatus @default(PUBLISHED)
+    status    TourStatus @default(DRAFT)
     isDeleted Boolean    @default(false)
 
     createdAt DateTime @default(now())

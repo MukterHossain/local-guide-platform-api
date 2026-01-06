@@ -1,3 +1,4 @@
+import { TravelPace, TravelStyle } from "@prisma/client";
 import { z } from "zod";
 
 const profileValidation = z.object({
@@ -19,9 +20,9 @@ const profileValidation = z.object({
 export const touristPreferenceValidation = z.object({
   interests: z.array(z.string()).optional(),
   preferredLangs: z.array(z.string()).optional(),
-  travelStyle: z.enum(["CASUAL", "ADVENTURE", "LUXURY"]),
-  groupSize: z.number().optional(),
-  travelPace: z.enum(["SLOW", "MODERATE", "FAST"]).optional(),
+  travelStyle: z.nativeEnum(TravelStyle).optional(),
+  groupSize: z.number().min(1).optional(),
+  travelPace: z.nativeEnum(TravelPace).optional(),
 });
 
 
@@ -38,7 +39,7 @@ export const createUserValidation = z.object({
   // profile: profileValidation.optional(),
 });
 export const becomeGuideValidation = z.object({
-  expertise: z.string().min(10),
+  expertise: z.string().min(2 ,{message: "Expertise is required"}),
   experienceYears: z.number().int().min(0),
   dailyRate: z.number().positive(),
   locationIds: z.array(z.string()).min(1),

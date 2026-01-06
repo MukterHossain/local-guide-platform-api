@@ -335,23 +335,8 @@ const getMyProfile = async (user: IJWTPayload) => {
         include: {
             profile: true,
             touristPreference: true,
-            guideLocations: {include: {location:true}}
+            guideLocations: { include: { location: true } }
         },
-        // select: {
-        //     id: true,
-        //     email: true,
-        //     name: true,
-        //     phone: true,
-        //     role: true,
-        //     needPasswordChange: true,
-        //     status: true,
-        //     isDeleted: true,
-        //     createdAt: true,
-        //     updatedAt: true,
-        //     // locations: true,
-        //     profile: true,
-        //     touristPreference: true
-        // }
     })
     return userInfo
 }
@@ -387,12 +372,18 @@ const updateMyProfile = async (user: IJWTPayload, req: Request) => {
         },
         include: { profile: true, touristPreference: true }
     });
-    // **************** 
-    if (user.role === UserRole.TOURIST && req.body.profile && (req.body.profile.expertise ||
-        req.body.profile.experienceYears ||
-        req.body.profile.dailyRate ||
-        req.body.profile.locationIds)) {
-        throw new ApiError(httpStatus.FORBIDDEN, "Tourist cannot update guide fields. Please, become a guide ");
+    const guideOnlyFields = [
+        "expertise",
+        "experienceYears",
+        "dailyRate",
+        "locationIds"
+    ];
+    if (user.role === UserRole.TOURIST && req.body.profile) {
+        const hasGuideField = guideOnlyFields.some(field => Object.keys(req.body.profile).includes(field));
+        if (hasGuideField) {
+            throw new ApiError(httpStatus.FORBIDDEN, "Tourist cannot update guide fields. Please, become a guide ");
+        }
+
     }
 
     let imageUrl = currentUserInfo.profile?.image;
@@ -459,23 +450,23 @@ const updateMyProfile = async (user: IJWTPayload, req: Request) => {
         },
     });
 
-    const locationIds = payload.profile?.locationIds ? JSON.parse(payload.profile.locationIds as string) : [];
+    const locationIds: string[] = payload.profile?.locationIds ?? [];
 
-    if (user.role === UserRole.GUIDE && payload.profile?.locationIds?.length) {
+    if (user.role === UserRole.GUIDE) {
         // Remove old guide locations 
         await prisma.guideLocation.deleteMany({
             where: { guideId: currentUserInfo.id }
         })
 
         // Add new guide locations
-        if (payload.profile.locationIds.length > 0) {
-            const guideLocationsData = payload.profile.locationIds.map((locationId: string) => ({
-                guideId: user.id,
-                locationId
-            })
-            );
+        if (locationIds.length > 0) {
+
             await prisma.guideLocation.createMany({
-                data: guideLocationsData,
+                data: locationIds.map((locationId: string) => ({
+                    guideId: currentUserInfo.id,
+                    locationId
+                })
+                ),
                 skipDuplicates: true
             })
         }
@@ -489,7 +480,7 @@ const becomeGuide = async (user: IJWTPayload, payload: {
     expertise: string;
     experienceYears: number;
     dailyRate: number;
-    locationId: string;
+    locationIds: string[];
 }) => {
     const existUser = await prisma.user.findUniqueOrThrow({
         where: {
@@ -527,19 +518,29 @@ const becomeGuide = async (user: IJWTPayload, payload: {
                 expertise: payload.expertise,
                 experienceYears: payload.experienceYears,
                 dailyRate: payload.dailyRate,
-                locationId: payload.locationId,
+                // locationId: payload.locationId,
                 verificationStatus: GuideVerificationStatus.PENDING
             },
             update: {
                 expertise: payload.expertise,
                 experienceYears: payload.experienceYears,
                 dailyRate: payload.dailyRate,
-                locationId: payload.locationId,
+                // locationId: payload.locationId,
                 verificationStatus: GuideVerificationStatus.PENDING
             }
         });
 
-        return { updatedUser, profile };
+        await tx.guideLocation.deleteMany({where: {guideId: existUser.id}});
+
+        const guideLocations = await tx.guideLocation.createMany({
+            data: payload.locationIds.map((locationId: string) => ({
+                guideId: existUser.id,
+                locationId
+            })),
+            skipDuplicates: true
+        })
+
+        return { updatedUser, profile, guideLocations };
     })
 
     return result;

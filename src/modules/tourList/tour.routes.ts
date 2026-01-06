@@ -10,7 +10,7 @@ import { IJWTPayload } from '../../types/common';
 import sendResponse from '../../shared/sendResponse';
 import { TourService } from './tour.service';
 import httpStatus from 'http-status'
-import { tourCreateValidation, tourUpdateValidation } from './tour.validation';
+import { tourCreateValidation, tourListUpdateValidation, tourUpdateValidation } from './tour.validation';
 import ApiError from '../../error/ApiError';
 
 const router = express.Router();
@@ -18,18 +18,20 @@ const router = express.Router();
 
 
 router.get("/me",
-    auth(UserRole.ADMIN, UserRole.GUIDE),
-    TourController.getMyTours)
-router.get("/:id",
-    auth(UserRole.ADMIN, UserRole.GUIDE , UserRole.TOURIST),
-    TourController.getSingleByIdFromDB)
-router.get("/public/:id",
-    // auth(UserRole.ADMIN, UserRole.GUIDE , UserRole.TOURIST),
-    TourController.getPublicById)
-
-router.get("/", 
-  // auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST), 
+  auth(UserRole.ADMIN, UserRole.GUIDE),
+  TourController.getMyTours)
+router.get("/",
+  auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
   TourController.getAllFromDB)
+router.get("/public",
+  TourController.getTourListforPublic)
+
+router.get("/:id",
+  auth(UserRole.ADMIN, UserRole.GUIDE, UserRole.TOURIST),
+  TourController.getSingleByIdFromDB)
+
+router.get("/public/:id", TourController.getPublicById)
+
 
 router.post(
   "/",
@@ -42,7 +44,7 @@ router.post(
     }
 
     const validation = tourCreateValidation.safeParse(bodyData);
-    if(!validation.success){
+    if (!validation.success) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         "Validation failed",
@@ -50,7 +52,7 @@ router.post(
       );
     }
 
-const result = await TourService.inserIntoDB(
+    const result = await TourService.inserIntoDB(
       req.user!,
       validation.data,
       req.files as Express.Multer.File[]
@@ -66,14 +68,18 @@ const result = await TourService.inserIntoDB(
 
 
 router.patch("/:id",
-    auth(UserRole.GUIDE, UserRole.ADMIN),
-    fileUploader.upload.array("images", 5),
-     TourController.updateIntoDB
+  auth(UserRole.GUIDE, UserRole.ADMIN),
+  fileUploader.upload.array("images", 5),
+  TourController.updateIntoDB
+)
+router.patch("/tour-status/:id",
+  auth(UserRole.ADMIN),
+  validateRequest(tourListUpdateValidation),
+  TourController.changeTourListStatus
 )
 router.delete("/:id",
-    auth(UserRole.GUIDE, UserRole.ADMIN), TourController.deleteFromDB
+  auth(UserRole.GUIDE, UserRole.ADMIN), TourController.deleteFromDB
 )
-
 
 
 
