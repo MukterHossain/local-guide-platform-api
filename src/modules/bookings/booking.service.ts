@@ -61,7 +61,7 @@ const createBooking = async (user: IJWTPayload, tourId: string, bookingDate: Dat
             }
         })
 
-        const paymentData= await tnx.payment.create({
+        const paymentData = await tnx.payment.create({
             data: {
                 bookingId: booking.id,
                 amount: tour.tourFee,
@@ -189,32 +189,80 @@ const getSingleByIdFromDB = async (user: IJWTPayload, id: string) => {
     return booking
 }
 
-const getMyBooking = async (user: IJWTPayload) => {
+const getMyBooking = async (user: IJWTPayload, params: any, options: IOptions) => {
+
+    const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options)
+    const { searchTerm, ...filterData } = params;
+    
     if (user.role !== UserRole.TOURIST && user.role !== UserRole.GUIDE) {
         throw new ApiError(httpStatus.UNAUTHORIZED, "Only Tourist can view their bookings");
     }
-    if (user.role === UserRole.GUIDE) {
-        return prisma.booking.findMany({
-            where: {
-                tour: { guideId: user.id }
-            },
-            include: { tour: true, user: true }
-        });
+   
+
+    let whereConditions: Prisma.BookingWhereInput = {};
+
+     if (user.role === UserRole.GUIDE) {
+        whereConditions = {
+            tour: { guideId: user.id }
+            
+        };
     }
-    const bookings = await prisma.booking.findMany({
-        where: {
+
+    // if (searchTerm) {
+    //     whereConditions.push({
+    //         OR: bookingSearchableFields.map(field => ({
+    //             [field]: {
+    //                 contains: searchTerm,
+    //                 mode: "insensitive"
+    //             }
+    //         }))
+    //     })
+    // }
+
+    // if (Object.keys(filterData).length > 0) {
+    //     whereConditions = {
+    //         ...whereConditions,
+    //         AND: Object.keys(filterData).map(key => ({
+    //             [key]: {
+    //                 equals: (filterData as any)[key]
+    //             }
+    //         }))
+    //     }
+    // }
+
+    if(user.role === UserRole.TOURIST){
+        whereConditions = {
             userId: user.id
+        }
+    }
+
+    const bookings = await prisma.booking.findMany({
+
+        where: whereConditions,
+        skip: skip,
+        take: Number(limit),
+        orderBy: {
+            [sortBy]: sortOrder
         },
         include: {
-            tour: true
+            tour: true,
+            user: true,
+            payment: true,
+            review: true
         },
-        orderBy: {
-            createdAt: "desc"
-        }
     })
+    const total = await prisma.booking.count({
+        where: whereConditions
+    })
+    return {
+        meta: {
+            page,
+            limit,
+            total
+        },
+        data: bookings
+    }
 
-
-    return bookings
 }
 
 const updateBookingStatus = async (user: IJWTPayload, id: string, status: BookingStatus) => {
@@ -343,8 +391,8 @@ const cancelUnpaidBookings = async () => {
         for (const unPaidBooking of unPaidBookings) {
             await tnx.availability.update({
                 where: {
-                        id: unPaidBooking.availabilityId,
-                        
+                    id: unPaidBooking.availabilityId,
+
                 },
                 data: {
                     isBooked: false

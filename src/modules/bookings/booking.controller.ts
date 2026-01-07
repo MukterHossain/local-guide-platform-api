@@ -6,6 +6,7 @@ import sendResponse from "../../shared/sendResponse";
 import { IJWTPayload } from "../../types/common";
 import { userFilterableFields } from "../users/user.constant";
 import pick from "../../helper/pick";
+import { bookingFilterableFields } from "./booking.constant";
 
 const createBooking = catchAsync (async (req:Request & { user?: IJWTPayload } , res:Response) =>{
     const { tourId, bookingDate } = req.body;
@@ -48,15 +49,19 @@ const getSingleByIdFromDB = catchAsync (async (req:Request & { user?: IJWTPayloa
     })
 })
 const getMyBooking = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
-  const user = req.user 
-    const result = await BookingService.getMyBooking(user as IJWTPayload);
+   const filters = pick(req.query, bookingFilterableFields) 
+    const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"])
+
+    const user = req.user 
+    const result = await BookingService.getMyBooking(user as IJWTPayload, filters, options);
     console.log("result", result);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "My bookings retrieved successfully",
-        data: result
+        data: result.data,
+        meta: result.meta
     })
 })
 const updateIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload }, res:Response) =>{
