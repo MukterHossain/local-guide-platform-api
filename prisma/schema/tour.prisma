@@ -18,7 +18,9 @@ model Tour {
 
     guide      User           @relation("GuideTours", fields: [guideId], references: [id], onDelete: Cascade)
     bookings   Booking[]      @relation("TourBookings")
+    availabilities Availability[] @relation("TourAvailabilities")
     reviews    Review[]
+    wishlists  Wishlist[]
     categories TourCategory[]
 
     @@map("tours")

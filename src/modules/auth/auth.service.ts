@@ -132,6 +132,8 @@ const getMe = async (user: any) => {
             status: true,
             name: true,
             phone: true,
+            profile: true,
+            guideLocations: { include: { location: true } },
             createdAt: true,
             updatedAt: true,
         }

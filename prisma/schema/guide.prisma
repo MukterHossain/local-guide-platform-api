@@ -1,5 +1,6 @@
 model Availability {
     id        String   @id @default(cuid())
+    tourId    String
     guideId   String
     startAt   DateTime
     endAt     DateTime
@@ -7,6 +8,7 @@ model Availability {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
+    tour     Tour      @relation("TourAvailabilities", fields: [tourId], references: [id], onDelete: Cascade)
     guide    User      @relation(fields: [guideId], references: [id], onDelete: Cascade)
     bookings Booking[]
 
@@ -17,6 +19,7 @@ model Availability {
 model Wishlist {
     id        String   @id @default(cuid())
     userId    String
+    tourId    String
     title     String?
     message   String
     meta      Json?
@@ -25,6 +28,7 @@ model Wishlist {
     updatedAt DateTime @updatedAt
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
 
     @@map("wishlists")
 }
@@ -45,8 +49,8 @@ model Report {
     createdAt  DateTime  @default(now())
     updatedAt  DateTime  @updatedAt
 
-    reporter User @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
-    guide    User @relation("ReportGuide", fields: [guideId], references: [id], onDelete: Cascade)
+    reporter User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+    guide    User  @relation("ReportGuide", fields: [guideId], references: [id], onDelete: Cascade)
     admin    User? @relation("ReportAdmin", fields: [adminId], references: [id])
 
     @@map("reports")

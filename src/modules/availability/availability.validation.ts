@@ -3,7 +3,7 @@ import {  z } from "zod";
 
 
 const createAvailabilitySchema = z.object({
-  // guideId:z.string({message: "Guide ID is required"}),
+  tourId: z.string({ message: "Tour ID is required" }),
   startAt: z.string({message: "Start time is required"}),
     endAt: z.string({message: "End time is required"}),
 })

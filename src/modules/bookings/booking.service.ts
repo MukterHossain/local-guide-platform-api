@@ -138,7 +138,10 @@ const getAllFromDB = async (params: any, options: IOptions) => {
         },
         include: {
             tour: true,
-            user: true
+            user: true,
+            payment: true,
+            
+            availability: true
         }
     })
     const total = await prisma.booking.count({

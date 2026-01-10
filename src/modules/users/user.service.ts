@@ -327,7 +327,7 @@ const getTouristsAllFromDB = async (params: any, options: IOptions) => {
 }
 
 const getMyProfile = async (user: IJWTPayload) => {
-    const userInfo = await prisma.user.findUniqueOrThrow({
+    const userInfo = await prisma.user.findFirstOrThrow({
         where: {
             email: user.email,
             status: UserStatus.ACTIVE
@@ -335,7 +335,38 @@ const getMyProfile = async (user: IJWTPayload) => {
         include: {
             profile: true,
             touristPreference: true,
-            guideLocations: { include: { location: true } }
+            guideLocations: { include: { location: true } },
+            tours: {
+                include: {
+                    categories: true,
+                    availabilities: true,
+                    reviews: true,
+                },
+            },
+            bookings: {
+                include: {
+                    tour: true,
+                    availability: true,
+                    payment: true,
+                },
+            },
+            reviews: {
+                include: {
+                    tour: true,
+                    user: true,
+                },
+            },
+            wishlist: {
+                include: {
+                    tour: true,
+                },
+            },
+            availabilities: true,
+            guideReviews: true,
+            reportsFiled: true,
+            reportsAgainst: true,
+            adminReports: true,
+
         },
     })
     return userInfo
@@ -530,7 +561,7 @@ const becomeGuide = async (user: IJWTPayload, payload: {
             }
         });
 
-        await tx.guideLocation.deleteMany({where: {guideId: existUser.id}});
+        await tx.guideLocation.deleteMany({ where: { guideId: existUser.id } });
 
         const guideLocations = await tx.guideLocation.createMany({
             data: payload.locationIds.map((locationId: string) => ({

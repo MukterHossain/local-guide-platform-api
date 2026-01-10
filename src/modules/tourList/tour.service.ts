@@ -155,7 +155,30 @@ const getAllFromDB = async (params: any, options: IOptions, user?: IJWTPayload |
                     createdAt: true,
                     updatedAt: true
                 }
-            }
+            },
+            availabilities: true,
+            categories: true,
+            reviews: {
+                select: {
+                    rating: true,
+                },
+            },
+            bookings: {
+                select: {
+                    status: true,
+                },
+            },
+            // guideLocations: {
+            //     select: {
+            //         location: true,
+            //     },
+            // },
+            wishlists: {
+                select: {
+                    id: true,
+                },
+            },
+
         },
     })
     const total = await prisma.tour.count({
@@ -230,6 +253,18 @@ const getTourListforPublic = async (params: any, options: IOptions) => {
             maxPeople: true,
             createdAt: true,
             updatedAt: true,
+
+            availabilities: {
+                where: {
+                    isBooked: false,
+                    startAt: { gte: new Date() }
+                },
+                select: {
+                    id: true,
+                    startAt: true,
+                    endAt: true
+                }
+            },
             guide: {
                 select: {
                     id: true,
@@ -312,7 +347,6 @@ const getPublicById = async (id: string) => {
             tourFee: true,
             maxPeople: true,
             meetingPoint: true,
-            // categories : true,
 
             guide: {
                 select: {
@@ -322,6 +356,7 @@ const getPublicById = async (id: string) => {
                     role: true,
                     status: true,
                     phone: true,
+                    availabilities: true,
                     profile: {
                         select: {
                             id: true,
@@ -375,19 +410,32 @@ const getMyTours = async (user: IJWTPayload) => {
     if (user.role === UserRole.GUIDE) {
         return prisma.tour.findMany({
             where: {
-                guideId: user.id
+                guideId: user.id,
+                isDeleted: false,
             },
             include: {
-                guide: true
+                guide: true,
+                categories: {
+                    include: {
+                        category: true,
+                    },
+                },
+                availabilities: true
             }
         });
     }
     const bookings = await prisma.tour.findMany({
         where: {
-            guideId: user.id
+            guideId: user.id,
+            isDeleted: false
         },
         include: {
-            guide: true
+            guide: true,
+            categories: {
+                include: {
+                    category: true
+                }
+            }
         },
         orderBy: {
             createdAt: "desc"

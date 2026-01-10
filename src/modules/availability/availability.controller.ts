@@ -6,11 +6,18 @@ import { IJWTPayload } from "../../types/common";
 import pick from "../../helper/pick";
 import { AvailabilityService } from "./availability.service";
 import { availabilityFilterableFields } from "./availability.constant";
+import ApiError from "../../error/ApiError";
 
 
 const inserIntoDB = catchAsync (async (req:Request & { user?: IJWTPayload } , res:Response) =>{
-    const {startAt, endAt} = req.body;
-    const result = await AvailabilityService.inserIntoDB(req.user!, new Date(startAt),
+     const { startAt, endAt, tourId } = req.body; // ✅ এখান থেকে নাও
+
+  if (!tourId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Tour ID is required");
+  }
+     
+    const result = await AvailabilityService.inserIntoDB(req.user!, tourId,
+    new Date(startAt),
     new Date(endAt) );
     console.log("result", result);
 

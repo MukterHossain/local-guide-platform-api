@@ -5,7 +5,7 @@ import { IOptions, paginationHelper } from "../../helper/paginationHelper";
 import { availabilitySearchableFields } from "./availability.constant";
 import httpStatus from "http-status";
 import ApiError from "../../error/ApiError";
-const inserIntoDB = async (user: IJWTPayload, startAt: Date, endAt: Date) => {
+const inserIntoDB = async (user: IJWTPayload, tourId: string, startAt: Date, endAt: Date) => {
     if (user.role !== UserRole.GUIDE) {
         throw new ApiError(httpStatus.UNAUTHORIZED, "Only Guide can create availability");
     }
@@ -14,19 +14,23 @@ const inserIntoDB = async (user: IJWTPayload, startAt: Date, endAt: Date) => {
     }
     const isExist = await prisma.availability.findFirst({
         where: {
-            startAt: startAt,
-            endAt: endAt
+            tourId: tourId,
+            OR: [{
+                startAt: { lte: endAt },
+                endAt: { gte: startAt }
+            }]
         }
     })
-    const guideId = user.id
     if (isExist) {
         throw new ApiError(httpStatus.BAD_REQUEST, "Availability already exists.");
     }
     const availability = await prisma.availability.create({
         data: {
-            guideId,
             startAt: startAt,
-            endAt: endAt
+            endAt: endAt,
+            guideId: user.id,
+            tourId: tourId,
+
         }
 
     })
@@ -73,7 +77,9 @@ const getAllFromDB = async (params: any, options: IOptions) => {
             [sortBy]: sortOrder
         },
         include: {
-            guide: true
+            guide: true,
+            tour: true,
+            bookings: true
         }
     })
     const total = await prisma.availability.count({
@@ -163,7 +169,9 @@ const getSingleByIdFromDB = async (user: IJWTPayload, id: string) => {
         where: { id: id },
 
         include: {
-            guide: true
+            guide: true,
+            tour: true,
+            bookings: true
         }
     })
 
